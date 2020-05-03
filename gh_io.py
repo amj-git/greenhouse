@@ -13,6 +13,7 @@ from io_thread import IO_Thread, IO_Thread_Manager, IO_Thread_ExampleIO, \
 from time import sleep
 from datetime import datetime, timedelta
 import queue
+from io_buffer import IO_Buffer
 
 def gh_io_test():
     
@@ -72,11 +73,20 @@ def gh_io_test():
                          pin=17 )
     io_manager.add_thread(io_thread7)
     
+    #reading all output descriptions
     print('IO Output descriptions:')
-    #io_manager.print_all_op_descriptions()
-    print(io_manager.get_all_op_descriptions())
+    all_op_desc=io_manager.get_all_op_descriptions()
+    print(all_op_desc)
     
+    #example of how to access one item   
+    print("The units of Probe 1/Temp is "+\
+          all_op_desc['Probe 1']['Temp']['punits'])
+    
+        
     io_manager.start_threads()
+    iob=io_manager.get_iob()  #get the IO buffer
+    print("IO Buffer before starting")
+    iob.printall()
     
     #sleep(15)  #let some backlog build up in the queue - should see queue overflow
     
@@ -90,7 +100,12 @@ def gh_io_test():
             continue
         
         print("gh_io_test(): Received from local_io_q: ",op_data)        
+        iob.add_data(op_data)  #feed the local buffer.  This may block
+                                #if any threads have locked it while they read
     
+    print("IO Buffer after running")
+    iob.printall()
+       
     io_manager.kill_threads()
     
     

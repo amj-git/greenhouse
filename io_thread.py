@@ -10,7 +10,6 @@ The IO_Threads are managed by IO_Thread_Manager
 
 Each IO output parameter is described by a dictionary with the
 following entries:-
-'pname'=name of the parameter
 'pdesc'=description of the parameter
 'ptype'=type of parameter  
 'pdatatype'=datatype of parameter - can be 'float', 'int', 'bool', 'string'
@@ -19,7 +18,11 @@ following entries:-
 'punits'=A string containing the units of the parameter (e.g. 'deg C')
 'tname'=The name of the thread.  This is included for convenience
 
-IO_Thread.get_op_desc() returns an array of the above description dictionaries
+IO_Thread.get_op_desc() returns an dictionary of the above description dictionaries
+The key of this dictionary is the name of the parameter.
+
+So for example IO_Thread.get_op_desc()['Temp']['ptype'] will return the type
+of the output parameter named 'Temp'
 
 ptype can be used by the GUI to decide what to do with the data, what icons to
 use etc.  It saves looking at the thread type.  Here are the options:-
@@ -39,8 +42,9 @@ The actual output data is pushed to the specified queue on the heartbeat.
 The format of the data is a dictionary as follows
 'tname'=name of the originating IO_Thread
 'time'=time of data
-'<param1>'=value of param 1
-'<param2>'=value of param 2
+'pname'=parameter name matching the descriptions above
+'data'=value of parameter
+
 etc
 
 The various HW support is included by deriving classes from IO_Thread
@@ -59,6 +63,7 @@ from datetime import datetime, timedelta
 from threading import Thread
 from random import seed,random
 import queue
+from io_buffer import IO_Buffer
 
 import pigpio  #we use pigpio for the DHT22s.  The ADAFruit library is unreliable.
                 #note you have to start the pigpio demon first before running
@@ -85,7 +90,7 @@ class IO_Thread(Thread):
         self._sim_hw=kwargs.get('sim_hw',False)
         self._period=kwargs.get('period',10)
         self._threadname=kwargs.get('threadname','Unnamed Thread')
-        self._op_desc=[]
+        self._op_desc=dict()
         self._set_op_desc() #set the parameter descriptions
         
     def term(self):
@@ -111,6 +116,9 @@ class IO_Thread(Thread):
         self._shutdown()
         print("IO_Thread: "+self._threadname+" Stopped")
         
+    def set_iob(self,iob):
+        self._iob=iob    
+    
     '''_startup
     Things to do before starting the heartbeat - override as necessary
     '''
@@ -126,17 +134,13 @@ class IO_Thread(Thread):
     def _heartbeat(self,triggertime):
         if self._sim_hw:
             #print("IO_Thread: "+self._threadname+" _heartbeat()")
-            
-            op_data=dict()
-                      
+                                 
             #generate random values for each parameter
-            for param in self._op_desc:
-                min=param['pmin'];
-                max=param['pmax'];
-                val=min+(max-min)*random()  #random between min and max
-                op_data[param['pname']]=val
-            
-            self._add_to_out_q(op_data,triggertime)
+            for pname in self._op_desc:
+                min=self._op_desc[pname]['pmin'];
+                max=self._op_desc[pname]['pmax'];
+                val=min+(max-min)*random()  #random between min and max    
+                self._add_to_out_q(pname,val,triggertime)
             
     '''_shutdown
     Things to do to clear up before stopping
@@ -153,29 +157,21 @@ class IO_Thread(Thread):
     def _set_op_desc(self):
         if self._sim_hw:
             #for sim HW, make a temperature and humidity params
-            self._op_desc.append({
-              'pname':'Temp',
+            self._op_desc['Temp']={
               'pdesc':'Temperature',
               'ptype':'temp',
               'pdatatype':'float',
               'pmin':-10,
               'pmax':40,
-              'punits':'deg C'
-            })
-            self._op_desc.append({
-              'pname':'Humid',
+              'punits':'deg C' }
+            self._op_desc['Humid']={
               'pdesc':'Humidity',
               'ptype':'humid',
               'pdatatype':'float',
               'pmin':0,
               'pmax':100,
-              'punits':'%'
-            })
-            self._append_tname_to_op_desc()
+              'punits':'%'}
             
-    def _append_tname_to_op_desc(self):
-        for p in self._op_desc:
-            p['tname']=self._threadname
                  
     '''get_op_desc
     
@@ -190,9 +186,12 @@ class IO_Thread(Thread):
         return self._threadname
     
     #adds the dictionary op_data to the queue, tagging on the standard extras
-    def _add_to_out_q(self,op_data,triggertime):
+    def _add_to_out_q(self,pname,data,triggertime):
+        op_data=dict()
         op_data['tname']=self._threadname
         op_data['time']=triggertime
+        op_data['pname']=pname
+        op_data['data']=data
         try:
             self._out_q.put(op_data,block=False)
         except queue.Full:  #consumer must have stopped - throw data away
@@ -211,7 +210,6 @@ class IO_Thread_ExampleIO(IO_Thread):
     
     def _set_op_desc(self):
         IO_Thread._set_op_desc(self)
-        #remember to include self._append_tname_to_op_desc() if overriding
     
     def _startup(self):
         IO_Thread._startup(self)
@@ -237,16 +235,13 @@ class IO_Thread_DS18B20(IO_Thread):
         self._addr=kwargs.get('addr',False)
     
     def _set_op_desc(self):        
-        self._op_desc.append({
-              'pname':'Temp',
+        self._op_desc['Temp']={
               'pdesc':'Temperature',
               'ptype':'temp',
               'pdatatype':'float',
               'pmin':-10,
               'pmax':40,
-              'punits':'deg C'
-            })
-        self._append_tname_to_op_desc()
+              'punits':'deg C'}
         
     def _startup(self):
         IO_Thread._startup(self)
@@ -258,8 +253,7 @@ class IO_Thread_DS18B20(IO_Thread):
             temp_c,temp_f=w1_read_temp(self._addr,self._h_gpio)
             #print("IO_Thread: "+self._threadname+" _heartbeat() temp_c=",temp_c)
             op_data=dict()
-            op_data[self._op_desc[0]['pname']]=temp_c
-            self._add_to_out_q(op_data,triggertime)
+            self._add_to_out_q('Temp',temp_c,triggertime)
             
     def _shutdown(self):
         IO_Thread._shutdown(self)
@@ -277,17 +271,14 @@ class IO_Thread_BH1750(IO_Thread):
         self._addr=kwargs.get('addr',BH1750_DEFAULT)
     
     def _set_op_desc(self):        
-        self._op_desc.append({
-              'pname':'Light',
+        self._op_desc['Light']={
               'pdesc':'Light Illuminance',
               'ptype':'light',
               'pdatatype':'float',
               'pmin':0,
               'pmax':100000,
-              'punits':'lx'
-            })
-        self._append_tname_to_op_desc()
-        
+              'punits':'lx'}
+                
     def _startup(self):
         IO_Thread._startup(self)
         if not self._sim_hw:
@@ -299,9 +290,8 @@ class IO_Thread_BH1750(IO_Thread):
         else:
             light=self._l_sensor.read()
             #print("IO_Thread: "+self._threadname+" _heartbeat() light=",light)
-            op_data=dict()
-            op_data[self._op_desc[0]['pname']]=light          
-            self._add_to_out_q(op_data,triggertime)
+            
+            self._add_to_out_q('Light',light,triggertime)
         
     def _shutdown(self):
         if not self._sim_hw:
@@ -319,26 +309,21 @@ class IO_Thread_DHT22(IO_Thread):
         self._pin=kwargs.get('pin',False)
     
     def _set_op_desc(self):        
-        self._op_desc.append({
-              'pname':'Temp',
+        self._op_desc['Temp']={
               'pdesc':'Temperature',
               'ptype':'temp',
               'pdatatype':'float',
               'pmin':-10,
               'pmax':40,
-              'punits':'deg C'
-            })
-        self._op_desc.append({
-              'pname':'Humid',
+              'punits':'deg C' }
+        self._op_desc['Humid']={
               'pdesc':'Humidity',
               'ptype':'humid',
               'ptype':'float',
               'pmin':0,
               'pmax':100,
-              'punits':'%'
-            })
-        self._append_tname_to_op_desc()
-        
+              'punits':'%' }
+                
     def _startup(self):
         IO_Thread._startup(self)
         if not self._sim_hw:
@@ -353,11 +338,9 @@ class IO_Thread_DHT22(IO_Thread):
             humid=self._dht_obj.humidity()
             temp_c=self._dht_obj.temperature()
             
-            #print("IO_Thread: "+self._threadname+" _heartbeat() temp_c=",temp_c," humid=",humid)
-            op_data=dict()
-            op_data[self._op_desc[0]['pname']]=temp_c
-            op_data[self._op_desc[1]['pname']]=humid            
-            self._add_to_out_q(op_data,triggertime)
+            #print("IO_Thread: "+self._threadname+" _heartbeat() temp_c=",temp_c," humid=",humid)  
+            self._add_to_out_q('Temp',temp_c,triggertime)
+            self._add_to_out_q('Humid',humid,triggertime)
         
     def _shutdown(self):
         if not self._sim_hw:
@@ -398,12 +381,20 @@ class IO_Thread_Manager:
     def add_thread(self,t):
         self._threads.append(t)
                     
-                    
+    '''
+        Start all the threads
+        At this point we can add an io buffer, iob
+    '''             
     def start_threads(self):
+        self._iob=IO_Buffer(self.get_all_op_descriptions(),10)
         for t in self._threads:
+            t.set_iob(self._iob)
             if not self._sim_hw:
                 t.set_pigpio(self._h_gpio)
             t.start()
+            
+    def get_iob(self):
+        return self._iob
             
     def _start_pigpio(self):
         if not self._sim_hw:
@@ -414,16 +405,16 @@ class IO_Thread_Manager:
     def _stop_pigpio(self):
         if not self._sim_hw:
             self._h_gpio.stop()
-            
-    def print_all_op_descriptions(self):
-        for t in self._threads:
-            print(t.get_threadname(),' io_desc:',t.get_op_desc())
-            
+                  
+    '''all_op_desc=get_all_op_descriptions()
+    This function returns a data structure which can be used to get the
+    description of any thread output parameter as follows:-
+    all_op_desc[<thread name>][<param name>]
+    '''     
     def get_all_op_descriptions(self):
-        all_op_desc=[]
+        all_op_desc=dict()
         for t in self._threads:
-            for op_desc in t.get_op_desc():
-                all_op_desc.append(op_desc)
+            all_op_desc[t.get_threadname()]=t.get_op_desc()
         return all_op_desc
         
 #END class IO_Thread_Manager------------------------------------------------        
