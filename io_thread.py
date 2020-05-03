@@ -12,12 +12,28 @@ Each IO output parameter is described by a dictionary with the
 following entries:-
 'pname'=name of the parameter
 'pdesc'=description of the parameter
-'ptype'=type of parameter - can be 'float', 'int', 'bool', 'string'
+'ptype'=type of parameter  
+'pdatatype'=datatype of parameter - can be 'float', 'int', 'bool', 'string'
 'pmin'=min value of parameter
 'pmax'=max value of the parameter
 'punits'=A string containing the units of the parameter (e.g. 'deg C')
+'tname'=The name of the thread.  This is included for convenience
 
 IO_Thread.get_op_desc() returns an array of the above description dictionaries
+
+ptype can be used by the GUI to decide what to do with the data, what icons to
+use etc.  It saves looking at the thread type.  Here are the options:-
+temp - temperature reading
+humid - humidity level reading
+light - light level reading
+moist - moisture level reading
+windowsw - window switch status
+doorsw - door switch status
+heater - heater state
+fan - fan state
+sprinkler - sprinkler state
+winpos - window opener position
+
 
 The actual output data is pushed to the specified queue on the heartbeat.
 The format of the data is a dictionary as follows
@@ -140,7 +156,8 @@ class IO_Thread(Thread):
             self._op_desc.append({
               'pname':'Temp',
               'pdesc':'Temperature',
-              'ptype':'float',
+              'ptype':'temp',
+              'pdatatype':'float',
               'pmin':-10,
               'pmax':40,
               'punits':'deg C'
@@ -148,11 +165,17 @@ class IO_Thread(Thread):
             self._op_desc.append({
               'pname':'Humid',
               'pdesc':'Humidity',
-              'ptype':'float',
+              'ptype':'humid',
+              'pdatatype':'float',
               'pmin':0,
               'pmax':100,
               'punits':'%'
             })
+            self._append_tname_to_op_desc()
+            
+    def _append_tname_to_op_desc(self):
+        for p in self._op_desc:
+            p['tname']=self._threadname
                  
     '''get_op_desc
     
@@ -188,6 +211,7 @@ class IO_Thread_ExampleIO(IO_Thread):
     
     def _set_op_desc(self):
         IO_Thread._set_op_desc(self)
+        #remember to include self._append_tname_to_op_desc() if overriding
     
     def _startup(self):
         IO_Thread._startup(self)
@@ -216,11 +240,13 @@ class IO_Thread_DS18B20(IO_Thread):
         self._op_desc.append({
               'pname':'Temp',
               'pdesc':'Temperature',
-              'ptype':'float',
+              'ptype':'temp',
+              'pdatatype':'float',
               'pmin':-10,
               'pmax':40,
               'punits':'deg C'
             })
+        self._append_tname_to_op_desc()
         
     def _startup(self):
         IO_Thread._startup(self)
@@ -254,11 +280,13 @@ class IO_Thread_BH1750(IO_Thread):
         self._op_desc.append({
               'pname':'Light',
               'pdesc':'Light Illuminance',
-              'ptype':'float',
+              'ptype':'light',
+              'pdatatype':'float',
               'pmin':0,
               'pmax':100000,
               'punits':'lx'
             })
+        self._append_tname_to_op_desc()
         
     def _startup(self):
         IO_Thread._startup(self)
@@ -294,7 +322,8 @@ class IO_Thread_DHT22(IO_Thread):
         self._op_desc.append({
               'pname':'Temp',
               'pdesc':'Temperature',
-              'ptype':'float',
+              'ptype':'temp',
+              'pdatatype':'float',
               'pmin':-10,
               'pmax':40,
               'punits':'deg C'
@@ -302,11 +331,13 @@ class IO_Thread_DHT22(IO_Thread):
         self._op_desc.append({
               'pname':'Humid',
               'pdesc':'Humidity',
+              'ptype':'humid',
               'ptype':'float',
               'pmin':0,
               'pmax':100,
               'punits':'%'
             })
+        self._append_tname_to_op_desc()
         
     def _startup(self):
         IO_Thread._startup(self)
@@ -384,10 +415,16 @@ class IO_Thread_Manager:
         if not self._sim_hw:
             self._h_gpio.stop()
             
-    def print_descriptions(self):
+    def print_all_op_descriptions(self):
         for t in self._threads:
             print(t.get_threadname(),' io_desc:',t.get_op_desc())
-        
+            
+    def get_all_op_descriptions(self):
+        all_op_desc=[]
+        for t in self._threads:
+            for op_desc in t.get_op_desc():
+                all_op_desc.append(op_desc)
+        return all_op_desc
         
 #END class IO_Thread_Manager------------------------------------------------        
     

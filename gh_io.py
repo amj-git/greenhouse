@@ -73,7 +73,8 @@ def gh_io_test():
     io_manager.add_thread(io_thread7)
     
     print('IO Output descriptions:')
-    io_manager.print_descriptions()
+    #io_manager.print_all_op_descriptions()
+    print(io_manager.get_all_op_descriptions())
     
     io_manager.start_threads()
     
