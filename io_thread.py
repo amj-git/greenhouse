@@ -49,6 +49,8 @@ from threading import Thread
 from random import seed,random
 import queue
 from io_w1 import sw_5v_pin, w1_read_temp
+from io_bh1750 import io_bh1750, BH1750_DEFAULT
+import io_dht22
 
 seed(1)
 
@@ -102,7 +104,8 @@ class IO_Thread(Thread):
     '''
     def _startup(self):
         if self._sim_hw:
-            print("IO_Thread: "+self._threadname+" _startup()")
+            #print("IO_Thread: "+self._threadname+" _startup()")
+            pass
             
     '''_heartbeat
     This is called periodically
@@ -113,9 +116,7 @@ class IO_Thread(Thread):
             #print("IO_Thread: "+self._threadname+" _heartbeat()")
             
             op_data=dict()
-            op_data['tname']=self._threadname
-            op_data['time']=triggertime
-            
+                      
             #generate random values for each parameter
             for param in self._op_desc:
                 min=param['pmin'];
@@ -123,17 +124,15 @@ class IO_Thread(Thread):
                 val=min+(max-min)*random()  #random between min and max
                 op_data[param['pname']]=val
             
-            try:
-                self._out_q.put(op_data,block=False)
-            except queue.Full:  #consumer must have stopped - throw data away
-                print("IO_Thread: "+self._threadname+" _heartbeat(): Unable to output data - Queue is full")
+            self._add_to_out_q(op_data,triggertime)
             
     '''_shutdown
     Things to do to clear up before stopping
     '''
     def _shutdown(self):
         if self._sim_hw:
-            print("IO_Thread: "+self._threadname+" _shutdown()")
+            #print("IO_Thread: "+self._threadname+" _shutdown()")
+            pass
     
     '''__set_op_desc
     Override this to set the descriptions
@@ -170,6 +169,15 @@ class IO_Thread(Thread):
         
     def get_threadname(self):
         return self._threadname
+    
+    #adds the dictionary op_data to the queue, tagging on the standard extras
+    def _add_to_out_q(self,op_data,triggertime):
+        op_data['tname']=self._threadname
+        op_data['time']=triggertime
+        try:
+            self._out_q.put(op_data,block=False)
+        except queue.Full:  #consumer must have stopped - throw data away
+            print("IO_Thread: "+self._threadname+" _heartbeat(): Unable to output data - Queue is full")
     
         
 #END class IO_Thread------------------------------------------------        
@@ -227,20 +235,109 @@ class IO_Thread_DS18B20(IO_Thread):
         else:
             temp_c,temp_f=w1_read_temp(self._addr,self._h_gpio)
             #print("IO_Thread: "+self._threadname+" _heartbeat() temp_c=",temp_c)
-            
             op_data=dict()
-            op_data['tname']=self._threadname
-            op_data['time']=triggertime
             op_data[self._op_desc[0]['pname']]=temp_c
+            self._add_to_out_q(op_data,triggertime)
             
-            try:
-                self._out_q.put(op_data,block=False)
-            except queue.Full:  #consumer must have stopped - throw data away
-                print("IO_Thread: "+self._threadname+" _heartbeat(): Unable to output data - Queue is full")
-        
     def _shutdown(self):
         IO_Thread._shutdown(self)
-#END class IO_Thread_ExampleIO------------------------------------------------    
+#END class IO_Thread_DS18B20------------------------------------------------    
+
+
+#BEGIN class IO_Thread_BH1750------------------------------------------------
+'''BH1750 Light Sensors
+    addr=i2c bus address
+  See the file io_bh1750
+'''
+class IO_Thread_BH1750(IO_Thread):
+    def __init__(self,**kwargs):
+        IO_Thread.__init__(self,**kwargs)
+        self._addr=kwargs.get('addr',BH1750_DEFAULT)
+    
+    def _set_op_desc(self):        
+        self._op_desc.append({
+              'pname':'Light',
+              'pdesc':'Light Illuminance',
+              'ptype':'float',
+              'pmin':0,
+              'pmax':100000,
+              'punits':'lx'
+            })
+        
+    def _startup(self):
+        IO_Thread._startup(self)
+        if not self._sim_hw:
+            self._l_sensor=io_bh1750(self._addr)
+        
+    def _heartbeat(self,triggertime):
+        if self._sim_hw:
+            IO_Thread._heartbeat(self,triggertime)
+        else:
+            light=self._l_sensor.read()
+            #print("IO_Thread: "+self._threadname+" _heartbeat() light=",light)
+            op_data=dict()
+            op_data[self._op_desc[0]['pname']]=light          
+            self._add_to_out_q(op_data,triggertime)
+        
+    def _shutdown(self):
+        if not self._sim_hw:
+            del self._l_sensor
+        IO_Thread._shutdown(self)
+                
+#END class IO_Thread_BH1750------------------------------------------------    
+
+#BEGIN class IO_Thread_DHT22------------------------------------------------
+'''DHT22 Temperature/Humidity Sensors
+'''
+class IO_Thread_DHT22(IO_Thread):
+    def __init__(self,**kwargs):
+        IO_Thread.__init__(self,**kwargs)
+        self._pin=kwargs.get('pin',False)
+    
+    def _set_op_desc(self):        
+        self._op_desc.append({
+              'pname':'Temp',
+              'pdesc':'Temperature',
+              'ptype':'float',
+              'pmin':-10,
+              'pmax':40,
+              'punits':'deg C'
+            })
+        self._op_desc.append({
+              'pname':'Humid',
+              'pdesc':'Humidity',
+              'ptype':'float',
+              'pmin':0,
+              'pmax':100,
+              'punits':'%'
+            })
+        
+    def _startup(self):
+        IO_Thread._startup(self)
+        if not self._sim_hw:
+            self._dht_obj=io_dht22.sensor(self._h_gpio, self._pin)
+        
+    def _heartbeat(self,triggertime):
+        if self._sim_hw:
+            IO_Thread._heartbeat(self,triggertime)
+        else:
+            self._dht_obj.trigger()
+            sleep(0.2)
+            humid=self._dht_obj.humidity()
+            temp_c=self._dht_obj.temperature()
+            
+            #print("IO_Thread: "+self._threadname+" _heartbeat() temp_c=",temp_c," humid=",humid)
+            op_data=dict()
+            op_data[self._op_desc[0]['pname']]=temp_c
+            op_data[self._op_desc[1]['pname']]=humid            
+            self._add_to_out_q(op_data,triggertime)
+        
+    def _shutdown(self):
+        if not self._sim_hw:
+            del self._dht_obj
+        IO_Thread._shutdown(self)
+#END class IO_Thread_DHT22------------------------------------------------    
+
 
       
 #START class IO_Thread_Manager------------------------------------------------      
@@ -252,10 +349,10 @@ class IO_Thread_Manager:
     def __init__(self,sim_hw):
         self._threads=[]
         self._sim_hw=sim_hw
-        self.start_pigpio();    
+        self._start_pigpio();    
             
     def __del__(self):
-        self.stop_pigpio()
+        self._stop_pigpio()
         pass
             
     def kill_threads(self):
@@ -276,16 +373,17 @@ class IO_Thread_Manager:
                     
     def start_threads(self):
         for t in self._threads:
-            t.set_pigpio(self._h_gpio)
+            if not self._sim_hw:
+                t.set_pigpio(self._h_gpio)
             t.start()
             
-    def start_pigpio(self):
+    def _start_pigpio(self):
         if not self._sim_hw:
             self._h_gpio=pigpio.pi()
             self._h_gpio.set_mode( sw_5v_pin, pigpio.OUTPUT)  #5V control pin
             self._h_gpio.write(sw_5v_pin,1)  #turn on the temp sensor power
         
-    def stop_pigpio(self):
+    def _stop_pigpio(self):
         if not self._sim_hw:
             self._h_gpio.stop()
             
