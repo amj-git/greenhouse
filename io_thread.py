@@ -32,27 +32,23 @@ these implement _startup(), _heartbeat(), _shutdown(), _set_op_desc()
 The _heartbeat() function adds data to the output queue
 
 '''
-
 import signal
 import time
 import threading
 import os
 import sys
 import glob
-
-import pigpio  #we use pigpio for the DHT22s.  The ADAFruit library is unreliable.
-                #note you have to start the pigpio demon first before running
-#import DHT22
 from time import sleep
 from datetime import datetime, timedelta
 from threading import Thread
 from random import seed,random
 import queue
+
+import pigpio  #we use pigpio for the DHT22s.  The ADAFruit library is unreliable.
+                #note you have to start the pigpio demon first before running
 from io_w1 import sw_5v_pin, w1_read_temp
 from io_bh1750 import io_bh1750, BH1750_DEFAULT
 import io_dht22
-
-seed(1)
 
 #START class IO_Thread------------------------------------------------
 class IO_Thread(Thread):
@@ -204,7 +200,7 @@ class IO_Thread_ExampleIO(IO_Thread):
 #END class IO_Thread_ExampleIO------------------------------------------------    
 
 #BEGIN class IO_Thread_DS18B20------------------------------------------------
-'''DS18B20 Temperature Sensors
+'''DS18B20 One-Wire Temperature Sensors
 We assume these are appearing in /sys/bus/w1/devices
 The RPI w1 interface can be used but it is terribly unreliable
 It is recommended to instead use a ds2482 interface chip on I2C
@@ -349,7 +345,8 @@ class IO_Thread_Manager:
     def __init__(self,sim_hw):
         self._threads=[]
         self._sim_hw=sim_hw
-        self._start_pigpio();    
+        self._start_pigpio()
+        seed(1)    #for random number gen
             
     def __del__(self):
         self._stop_pigpio()

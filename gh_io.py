@@ -13,13 +13,12 @@ from io_thread import IO_Thread, IO_Thread_Manager, IO_Thread_ExampleIO, \
 from time import sleep
 from datetime import datetime, timedelta
 import queue
-from queue import Queue
 
 def gh_io_test():
     
     sim_mode=False
     
-    local_io_q=Queue(20)  #allow max of 20 items
+    local_io_q=queue.Queue(20)  #allow max of 20 items
     
     io_manager=IO_Thread_Manager(sim_hw=sim_mode)  #sim_hw for the Manager determinest whether to start pigpio
     
@@ -89,7 +88,7 @@ def gh_io_test():
         except queue.Empty:
             continue
         
-        print("gh_io_test(): Received from queue: ",op_data)        
+        print("gh_io_test(): Received from local_io_q: ",op_data)        
     
     io_manager.kill_threads()
     
