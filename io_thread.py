@@ -348,6 +348,51 @@ class IO_Thread_DHT22(IO_Thread):
         IO_Thread._shutdown(self)
 #END class IO_Thread_DHT22------------------------------------------------    
 
+#BEGIN class IO_Thread_ExampleController------------------------------------------------
+'''Demo of how to read and react to data from other threads
+This example just repeats the last data from a given thread and parameter
+It shows how to lock the data to prevent it changing during the read.
+source_tname, source_pname determine the data source
+'''
+class IO_Thread_ExampleController(IO_Thread):
+    def __init__(self,**kwargs):
+        IO_Thread.__init__(self,**kwargs)
+        self._source_tname=kwargs.get('source_tname',False)
+        self._source_pname=kwargs.get('source_pname',False)
+    
+    def _set_op_desc(self):        
+        self._op_desc['Data']={
+              'pdesc':'unknown',   #can't find this info with current design
+              'ptype':'unknown',
+              'pdatatype':'float',
+              'pmin':-10,
+              'pmax':40,
+              'punits':'unknown' }
+                
+    def _startup(self):
+        #get the data source buffer - it is a deque
+        #this has to be done in _startup as iob doesn't exist when
+        #the constructor is called
+        (n,self._source_buf)=self._iob.get_databuffer(self._source_tname,\
+                                                  self._source_pname)
+        
+    def _heartbeat(self,triggertime):
+        #lock the buffer before reading
+        #Note this isn't super-efficient as it locks the whole buffer
+        #for all threads
+        data=None
+        with self._iob.get_lock():
+            n=len(self._source_buf)
+            if n>0:
+                time,data=self._source_buf[0]  #last reading
+        
+        #print("IO_Thread: "+self._threadname+" _heartbeat() data=",data)  
+        if data is not None:
+            self._add_to_out_q('Data',data,triggertime)
+                
+    def _shutdown(self):
+        IO_Thread._shutdown(self)
+#END class IO_Thread_ExampleController------------------------------------------------    
 
       
 #START class IO_Thread_Manager------------------------------------------------      

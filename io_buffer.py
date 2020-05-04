@@ -33,7 +33,7 @@ class IO_Buffer:
             print("Thread Name: "+tname)
             for pname in self._buf[tname]:
                 print("  Parameter: "+pname)
-                (n_items,datapoints)=self.get_all_datapoints(tname,pname)
+                (n_items,datapoints)=self.get_databuffer(tname,pname)
                 print("    Number of items=",n_items) 
                 if n_items>0:
                     print("    Last Value=",self.get_last_datapoint(tname,pname))
@@ -51,12 +51,12 @@ class IO_Buffer:
     def get_lock(self):
         return self._lock
         
-    '''get_all_datapoints(tname,pname)
+    '''get_databuffer(tname,pname)
     returns (n,datapoints) where n is the number of points and datapoints is
     the deque object.  The newest data is at the left.
     data in the deque is in the format (time,data)
     '''
-    def get_all_datapoints(self,tname,pname):
+    def get_databuffer(self,tname,pname):
         datapoints=self._buf[tname][pname]
         n=len(datapoints)
         return (n,datapoints)
@@ -64,7 +64,7 @@ class IO_Buffer:
     #as above but returns the last value or None if there is no data
     #returned format is (time,data)
     def get_last_datapoint(self,tname,pname):
-        (n,datapoints)=self.get_all_datapoints(tname,pname)
+        (n,datapoints)=self.get_databuffer(tname,pname)
         if len(datapoints)>0:
             return datapoints[0]
         else:

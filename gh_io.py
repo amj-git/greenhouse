@@ -9,7 +9,8 @@ Entry point to gh_io process
 from io_thread import IO_Thread, IO_Thread_Manager, IO_Thread_ExampleIO, \
                         IO_Thread_DS18B20, \
                         IO_Thread_BH1750, \
-                        IO_Thread_DHT22
+                        IO_Thread_DHT22, \
+                        IO_Thread_ExampleController
 from time import sleep
 from datetime import datetime, timedelta
 import queue
@@ -72,6 +73,16 @@ def gh_io_test():
                          period=5, \
                          pin=17 )
     io_manager.add_thread(io_thread7)
+    
+    #demo of a thread that uses data from another thread
+    #this example simply repeats the temperature from DHT1
+    io_thread8=IO_Thread_ExampleController(threadname="Sim Ctrl 1", \
+                         out_q=local_io_q, \
+                         sim_hw=sim_mode, \
+                         period=3, \
+                         source_tname='DHT1', \
+                         source_pname='Temp' )
+    io_manager.add_thread(io_thread8)
     
     #reading all output descriptions
     print('IO Output descriptions:')
