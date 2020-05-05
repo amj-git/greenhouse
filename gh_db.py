@@ -21,10 +21,11 @@ class gh_mon(Thread):
     '''__init__
     io_q=the queue to monitor
     '''
-    def __init__(self,io_q):
+    def __init__(self,io_q,dispatch_fn):
         Thread.__init__(self)
         self.daemon=True
         self._io_q=io_q
+        self._fn=dispatch_fn
         
     def term(self):
         self.__running=False
@@ -38,16 +39,15 @@ class gh_mon(Thread):
             try:
                 op_data=self._io_q.get(timeout=0.1) #wait 100ms max
             except queue.Empty:
-                continue
-            
-            print("io_mon: op_data=",op_data)
-            #<Dispatch the event>
+                continue            
+            #Dispatch the event
+            self._fn(op_data)            
                
     def _startup(self):
         self.__running=True
         pass
         
-
+#START class gh_db-------------------------------------
 class gh_db:
     def __init__(self):
         self._io_q=multiprocessing.Queue()
@@ -55,11 +55,17 @@ class gh_db:
         self._gh_io_process=\
             multiprocessing.Process(target=gh_io.gh_io_main,args=(self.get_io_q(),self.__io_ctrl_gh_io))
         self._gh_io_process.daemon=True
-        self._gh_mon=gh_mon(self.get_io_q())
+        self._gh_mon=gh_mon(self.get_io_q(),self._dispatch_fn)
                 
     def start_io(self):
         self._gh_io_process.start()  #start IO process
         print("gh_db: IO Started.")
+        
+    #this is the despatch function.  It is called by the thread
+    #every time data is received in the io_q
+    #you can override this in a derived method for your preferred behaviour
+    def _dispatch_fn(self,data):
+        print("gh_db._dispatch_fn: data=",data)
         
     def start_events(self):
         self._gh_mon.start()  #start receiving thread
@@ -95,6 +101,11 @@ class gh_db:
         
     def get_io_q(self):
         return self._io_q
+#START class gh_db-------------------------------------
+
+#START class gh_io_dispatcher-------------------------------------
+
+#END class gh_io_dispatcher-------------------------------------
 
 def gh_db_test():
     db=gh_db()
