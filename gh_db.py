@@ -13,6 +13,7 @@ from time import sleep
 from datetime import datetime, timedelta
 import queue
 from threading import Thread
+import prctl
 
 import gh_io
 
@@ -36,6 +37,7 @@ class gh_mon(Thread):
         pass
     
     def run(self):
+        prctl.set_name('gh_mon') #allows process to be idenfified in htop
         self._startup()
         while(self.__running):
             try:

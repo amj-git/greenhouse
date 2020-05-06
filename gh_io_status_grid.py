@@ -14,9 +14,9 @@ class gh_io_status_grid(BoxLayout):
             self._controls[tname]=dict()
             for pname in self._all_op_desc[tname]:  #for each output parameter                
                 lay=BoxLayout(orientation='horizontal')
-                ti1=TextInput()
-                ti2=TextInput()
-                ti3=TextInput()
+                ti1=TextInput(size_hint=(1,1))
+                ti2=TextInput(size_hint=(0.25,1))
+                ti3=TextInput(size_hint=(0.25,1))
                 self._controls[tname][pname]=ti2
                 lay.add_widget(ti1)
                 lay.add_widget(ti2)
@@ -27,4 +27,4 @@ class gh_io_status_grid(BoxLayout):
         
     def process_data(self,data):
         self._controls[data['tname']][data['pname']].text=\
-                        str(data['data'])
+                        '{0:.2f}'.format(data['data'])

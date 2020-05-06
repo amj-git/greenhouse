@@ -70,6 +70,7 @@ import pigpio  #we use pigpio for the DHT22s.  The ADAFruit library is unreliabl
 from io_w1 import sw_5v_pin, w1_read_temp
 from io_bh1750 import io_bh1750, BH1750_DEFAULT
 import io_dht22
+import prctl
 
 #START class IO_Thread------------------------------------------------
 class IO_Thread(Thread):
@@ -101,7 +102,7 @@ class IO_Thread(Thread):
         pass
     
     def run(self):
-        
+        prctl.set_name(self._threadname) #allows process to be idenfified in htop
         self._startup()
         while(self.__running):
             lasttime=datetime.now()

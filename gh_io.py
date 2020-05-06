@@ -15,6 +15,7 @@ from time import sleep
 from datetime import datetime, timedelta
 import queue
 from io_buffer import IO_Buffer
+import prctl
 
 
 def gh_io_main(io_q,io_ctrl):
@@ -89,6 +90,7 @@ def gh_io_main(io_q,io_ctrl):
     io_manager.start_threads()
     iob=io_manager.get_iob()  #get the IO buffer
        
+    prctl.set_name('gh_io') #allows process to be idenfified in htop
     _main_loop_running=True
     #GH_IO MAIN LOOP------------------ 
     while(_main_loop_running): 

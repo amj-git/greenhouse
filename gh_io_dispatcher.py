@@ -15,7 +15,7 @@ import queue
 
 
 MAX_GH_EV_Q_LEN = 50
-EV_Q_CLOCK_PERIOD = 0.05 #Period of checking GH_EV_Q in seconds
+EV_Q_CLOCK_PERIOD = 0.2 #Period of checking GH_EV_Q in seconds
 
 #START class gh_io_dispatcher-------------------------------------
 class gh_io_dispatcher(gh_db,EventDispatcher):
@@ -42,7 +42,8 @@ class gh_io_dispatcher(gh_db,EventDispatcher):
     #this function is running on a clock heartbeat in the kivy thread
     #it receives data from the _consumer_fn() via the gh_ev_q
     def _clock_heartbeat(self,dt):
-        datavalid=True       
+        datavalid=True
+              
         while(datavalid):  #read everything on the queue
             try:
                 data=self._gh_ev_q.get(block=False) 
@@ -111,7 +112,7 @@ class RootWidget(BoxLayout):
     #here it just prints the data
     def _process_io_data(self,*args):
         self.statusgrid.process_data(args[1])
-        Logger.info("gh_io_dispatcher:"+str(args[1]))
+        #Logger.debug("gh_io_dispatcher:"+str(args[1]))
         
     def stop_io(self,*args):
         self._gio.stop_io()
