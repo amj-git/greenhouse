@@ -16,16 +16,18 @@ from threading import Thread
 
 import gh_io
 
+MAX_IO_Q_LEN = 100
+
 #monitor thread
 class gh_mon(Thread):
     '''__init__
     io_q=the queue to monitor
     '''
-    def __init__(self,io_q,dispatch_fn):
+    def __init__(self,io_q,consumer_fn):
         Thread.__init__(self)
         self.daemon=True
         self._io_q=io_q
-        self._fn=dispatch_fn
+        self._fn=consumer_fn
         
     def term(self):
         self.__running=False
@@ -40,7 +42,7 @@ class gh_mon(Thread):
                 op_data=self._io_q.get(timeout=0.1) #wait 100ms max
             except queue.Empty:
                 continue            
-            #Dispatch the event
+            #consume the data using the provided function
             self._fn(op_data)            
                
     def _startup(self):
@@ -50,12 +52,12 @@ class gh_mon(Thread):
 #START class gh_db-------------------------------------
 class gh_db:
     def __init__(self):
-        self._io_q=multiprocessing.Queue()
+        self._io_q=multiprocessing.Queue(MAX_IO_Q_LEN)
         (self._io_ctrl,self.__io_ctrl_gh_io)=multiprocessing.Pipe()  #not end b only used by gh_io end
         self._gh_io_process=\
             multiprocessing.Process(target=gh_io.gh_io_main,args=(self.get_io_q(),self.__io_ctrl_gh_io))
         self._gh_io_process.daemon=True
-        self._gh_mon=gh_mon(self.get_io_q(),self._dispatch_fn)
+        self._gh_mon=gh_mon(self.get_io_q(),self._consumer_fn)
                 
     def start_io(self):
         self._gh_io_process.start()  #start IO process
@@ -64,8 +66,13 @@ class gh_db:
     #this is the despatch function.  It is called by the thread
     #every time data is received in the io_q
     #you can override this in a derived method for your preferred behaviour
-    def _dispatch_fn(self,data):
-        print("gh_db._dispatch_fn: data=",data)
+    def _consumer_fn(self,data):
+        #print("gh_db._consumer_fn: data=",data)
+        self._save_to_db(data)
+        
+    #add function here to save the data to the database
+    def _save_to_db(self,data):
+        pass
         
     def start_events(self):
         self._gh_mon.start()  #start receiving thread
