@@ -57,7 +57,7 @@ class gh_db:
         self._io_q=multiprocessing.Queue(MAX_IO_Q_LEN)
         (self._io_ctrl,self.__io_ctrl_gh_io)=multiprocessing.Pipe()  #not end b only used by gh_io end
         self._gh_io_process=\
-            multiprocessing.Process(target=gh_io.gh_io_main,args=(self.get_io_q(),self.__io_ctrl_gh_io))
+            multiprocessing.Process(name="gh_io process",target=gh_io.gh_io_main,args=(self.get_io_q(),self.__io_ctrl_gh_io))            
         self._gh_io_process.daemon=True
         self._gh_mon=gh_mon(self.get_io_q(),self._consumer_fn)
                 
@@ -117,6 +117,9 @@ class gh_db:
 #END class gh_io_dispatcher-------------------------------------
 
 def gh_db_test():
+    prctl.set_name('gh_db_test main') #allows process to be idenfified in htop
+    prctl.set_proctitle('app main process') #allows process to be idenfified in htop
+    
     db=gh_db()
     db.start_io()
     
@@ -132,9 +135,12 @@ def gh_db_test():
     db.start_events()  #starts the listening thread which will dispatch events
     
       
-    sleep(15)  #let everything run for a while
+    #sleep(15)  #let everything run for a while
+    while(True):
+        sleep(1)
     
     db.stop_io()  #shut it all down
 
 if __name__ == "__main__":   
+    multiprocessing.set_start_method('spawn')
     gh_db_test()

@@ -12,7 +12,7 @@ from gh_db import gh_db
 from kivy.event import EventDispatcher
 from kivy.clock import Clock
 import queue
-
+import prctl
 
 MAX_GH_EV_Q_LEN = 50
 EV_Q_CLOCK_PERIOD = 0.2 #Period of checking GH_EV_Q in seconds
@@ -69,6 +69,9 @@ from kivy.uix.widget import Widget
 from kivy.logger import Logger
 from gh_io_status_grid import gh_io_status_grid
 from kivy.graphics import Color, Ellipse, Rectangle, RoundedRectangle
+import sys
+import multiprocessing
+from time import sleep
 
 class RootWidget(BoxLayout):
     def __init__(self, **kwargs):
@@ -91,21 +94,20 @@ class RootWidget(BoxLayout):
     def start_io(self):
         self._gio=gh_io_dispatcher()
         self._gio.start_io()
-    
         self._gio.bind(on_io_data=self._process_io_data)
-                    
-        io_desc=self._gio.io_query('OPDESC?',0,5)
+                       
+                             
+        io_desc=self._gio.io_query('OPDESC?',0,15)  #command,data,timeout - need long timeout if using spawn instead of fork
         Logger.info("init_io: IO Descriptions:")
         if io_desc is not None:
             Logger.info(io_desc)
         else:
-            Logger.exception("init_io: Query Timed Out")
+            Logger.exception("init_io: OPDESC? Query Timed Out (No response from gh_io process)")
+            sys.exit(1)
     
         #Build the status grid - see gh_io_status_grid.py
         self.statusgrid=gh_io_status_grid(all_op_desc=io_desc)
-        self.ti1.add_widget(self.statusgrid)
-    
-        Logger.info("init_io: Listening to io_q.")       
+        self.ti1.add_widget(self.statusgrid)  
         self._gio.start_events()
         
     #this is the callback that is triggered by the io_q events
@@ -128,7 +130,7 @@ class gh_db_dispatcher_test_app(App):
         self._rw=RootWidget()
         return self._rw  
 
-    def on_start(self):
+    def on_start(self):        
         self._rw.start_io()
         self._running=True
     
@@ -138,4 +140,7 @@ class gh_db_dispatcher_test_app(App):
             self._running=False
 
 if __name__ == "__main__":   
+    multiprocessing.set_start_method('fork')
+    prctl.set_proctitle('gh_main process') #allows process to be idenfified in htop
+    prctl.set_name('kivy main') #allows process to be idenfified in htop
     gh_db_dispatcher_test_app().run()
