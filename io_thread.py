@@ -164,7 +164,7 @@ class IO_Thread(Thread):
               'pdatatype':'float',
               'pmin':-10,
               'pmax':40,
-              'punits':'deg C' }
+              'punits':u'\xb0C' }
             self._op_desc['Humid']={
               'pdesc':'Humidity',
               'ptype':'humid',
@@ -242,7 +242,7 @@ class IO_Thread_DS18B20(IO_Thread):
               'pdatatype':'float',
               'pmin':-10,
               'pmax':40,
-              'punits':'deg C'}
+              'punits':u'\xb0C'}   #degree symbol is u'\xb0'
         
     def _startup(self):
         IO_Thread._startup(self)
@@ -316,7 +316,7 @@ class IO_Thread_DHT22(IO_Thread):
               'pdatatype':'float',
               'pmin':-10,
               'pmax':40,
-              'punits':'deg C' }
+              'punits':u'\xb0C' }
         self._op_desc['Humid']={
               'pdesc':'Humidity',
               'ptype':'humid',

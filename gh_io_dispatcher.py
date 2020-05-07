@@ -8,6 +8,12 @@ interface.
 
 
 '''
+import os
+os.environ['KIVY_WINDOW']='sdl2'
+os.environ['KIVY_TEXT']='sdl2'
+os.environ['KIVY_BCM_DISPMANX_ID']='2' #HDMI
+os.environ['KIVY_GL_BACKEND']='sdl2'
+
 from gh_db import gh_db
 from kivy.event import EventDispatcher
 from kivy.clock import Clock
@@ -15,7 +21,7 @@ import queue
 import prctl
 
 MAX_GH_EV_Q_LEN = 50
-EV_Q_CLOCK_PERIOD = 0.2 #Period of checking GH_EV_Q in seconds
+EV_Q_CLOCK_PERIOD = 0.5 #Period of checking GH_EV_Q in seconds
 
 #START class gh_io_dispatcher-------------------------------------
 class gh_io_dispatcher(gh_db,EventDispatcher):
@@ -85,11 +91,7 @@ class RootWidget(BoxLayout):
                   
         self.add_widget(self.ti1)
         self.add_widget(b1)
-        
-        with self.ti1.canvas:
-            Color(1,0,0,0.5,mode='rgba')
-            Rectangle(pos=self.ti1.pos,size=self.ti1.size)
-                      
+                             
         
     def start_io(self):
         self._gio=gh_io_dispatcher()
