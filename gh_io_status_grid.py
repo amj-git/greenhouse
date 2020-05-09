@@ -24,6 +24,8 @@ process_data, passing the received data object.
 
 The LED flashes once with each received data for a particular parameter.
 
+See https://github.com/amj-git/greenhouse/wiki/gh_io_status_grid
+
 '''
 class gh_io_status_grid(BoxLayout):
     def __init__(self,**kwargs):
