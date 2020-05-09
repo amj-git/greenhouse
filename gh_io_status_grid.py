@@ -4,25 +4,6 @@ from kivy.uix.label import Label
 from led import Led
 
 '''gh_io_status_grid
-This is a Widget for displaying the last received data from the various threads.
-
-It accepts an all-output-descriptions data structure.  This can be obtained
-using the OPDESC? query sent to the IO dispatcher object.
-
-The constructor builds a box layout grid with the following controls for every
-output parameter in every thread:-
-
-<LED> <Description> <Data> <Units>
-
-Description is filled with the thread name / parameter names.
-Units is filled with the units described in the OPDESC data.
-
-LED and Data are filled by the process_data method.  This accepts a data object
-from the gh_ev_q.  For example, this can be set up by binding a function
-to the gh_io_dispatcher on_io_data event.  That function should call
-process_data, passing the received data object.
-
-The LED flashes once with each received data for a particular parameter.
 
 See https://github.com/amj-git/greenhouse/wiki/gh_io_status_grid
 
