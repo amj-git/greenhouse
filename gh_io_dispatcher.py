@@ -1,18 +1,28 @@
-'''
-gh_io_dispatcher.py
 
+#gh_io_dispatcher.py
+'''
 This file contains the class gh_io_dispatcher
 
 This derives from both EventDispatcher and gh_db and adds a Kivy event
 interface.
 
-
+It also contains test code to run up a basic GUI
 '''
-import os
-os.environ['KIVY_WINDOW']='sdl2'
-os.environ['KIVY_TEXT']='sdl2'
-os.environ['KIVY_BCM_DISPMANX_ID']='2' #HDMI
-os.environ['KIVY_GL_BACKEND']='sdl2'
+
+#Environment settings for running in Raspberry PI CLI mode
+'''This uses SDL2 as the backend
+This is intended for local operation (e.g. via a touchscreen)
+
+Note: you can change between CLI and GUI mode in with "sudo raspi-config"
+If you run in GUI mode, it will work with the parameters below.
+Performance will be very slow, but you can drive it over VNC.
+'''
+if __name__ == "__main__":
+    import os 
+    os.environ['KIVY_WINDOW']='sdl2'
+    os.environ['KIVY_TEXT']='sdl2'
+    os.environ['KIVY_BCM_DISPMANX_ID']='2' #HDMI
+    os.environ['KIVY_GL_BACKEND']='sdl2'
 
 from gh_db import gh_db
 from kivy.event import EventDispatcher
@@ -78,6 +88,7 @@ from kivy.graphics import Color, Ellipse, Rectangle, RoundedRectangle
 import sys
 import multiprocessing
 from time import sleep
+
 
 class RootWidget(BoxLayout):
     def __init__(self, **kwargs):
