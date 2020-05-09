@@ -10,19 +10,36 @@ It also contains test code to run up a basic GUI
 '''
 
 #Environment settings for running in Raspberry PI CLI mode
-'''This uses SDL2 as the backend
-This is intended for local operation (e.g. via a touchscreen)
 
+'''
 Note: you can change between CLI and GUI mode in with "sudo raspi-config"
-If you run in GUI mode, it will work with the parameters below.
-Performance will be very slow, but you can drive it over VNC.
+
 '''
 if __name__ == "__main__":
+    StartMode='general'   #options: 'rpi_cli', 'general'
     import os 
-    os.environ['KIVY_WINDOW']='sdl2'
-    os.environ['KIVY_TEXT']='sdl2'
-    os.environ['KIVY_BCM_DISPMANX_ID']='2' #HDMI
-    os.environ['KIVY_GL_BACKEND']='sdl2'
+    
+    if StartMode=='rpi_cli':
+        '''This uses SDL2 as the backend
+        This is intended for local CLI-mode operation (e.g. via a touchscreen)
+        If you run this with the GUI, it will work and you can see it via
+        VNC but it is cripplingly slow.
+        '''
+        os.environ['KIVY_WINDOW']='sdl2'
+        os.environ['KIVY_TEXT']='sdl2'
+        os.environ['KIVY_BCM_DISPMANX_ID']='2' #HDMI
+        os.environ['KIVY_GL_BACKEND']='sdl2'
+        
+    if StartMode=='general':  #general operation - remove any special settings
+        '''
+        When run with the GUI, it chooses the egl_rpi backend.  The app
+        runs and can be seen only on the HDMI display (full screen). VNC
+        viewer cannot display the app.  It runs nice and fast.
+        '''
+        pass
+        
+ 
+    
 
 from gh_db import gh_db
 from kivy.event import EventDispatcher
