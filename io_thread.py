@@ -114,7 +114,8 @@ class IO_Thread(Thread):
             self._heartbeat(lasttime)
             if not self.__running: #speed up shutdown
                 break
-            delta=(datetime.now()-lasttime).total_seconds()
+            endtime=datetime.now()
+            delta=(endtime-lasttime).total_seconds()
             sleep_time=self._period-delta
             if(sleep_time<0):
                 sleep_time=0
@@ -147,6 +148,7 @@ class IO_Thread(Thread):
                 max=self._op_desc[pname]['pmax'];
                 val=min+(max-min)*random()  #random between min and max    
                 self._add_to_out_q(pname,val,triggertime)
+                
             
     '''_shutdown
     Things to do to clear up before stopping
