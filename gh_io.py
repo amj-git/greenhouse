@@ -45,7 +45,7 @@ def gh_io_main(io_q,io_ctrl):
     io_thread2=IO_Thread_ExampleIO(threadname="Sim Thread 2", \
                          out_q=local_io_q, \
                          sim_hw=True, \
-                         period=1.5)
+                         period=0.618)
     io_manager.add_thread(io_thread2)
         
     io_thread3=IO_Thread_DS18B20(threadname="Probe 1", \
