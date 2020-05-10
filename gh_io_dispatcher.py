@@ -16,9 +16,16 @@ Note: you can change between CLI and GUI mode in with "sudo raspi-config"
 
 '''
 if __name__ == "__main__":
-    StartMode='general'   #options: 'rpi_cli', 'general'
-    import os 
+    import platform
+    import os
     
+    #choose CLI or GUI on Raspberry Pi
+    StartMode='rpi_cli'   #options: 'rpi_cli', 'general'
+        
+    #on windows, override
+    if platform.system()=='Windows':   
+        StartMode='general'   
+        
     if StartMode=='rpi_cli':
         '''This uses SDL2 as the backend
         This is intended for local CLI-mode operation (e.g. via a touchscreen)
@@ -45,7 +52,7 @@ from gh_db import gh_db
 from kivy.event import EventDispatcher
 from kivy.clock import Clock
 import queue
-import prctl
+from process_control import pr_cont
 
 MAX_GH_EV_Q_LEN = 50
 EV_Q_CLOCK_PERIOD = 0.5 #Period of checking GH_EV_Q in seconds
@@ -93,84 +100,85 @@ class gh_io_dispatcher(gh_db,EventDispatcher):
 
 
 #TEST CODE
-from kivy.app import App
-from kivy.core.window import Window
-from kivy.uix.button import Button
-from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.textinput import TextInput
-from kivy.uix.widget import Widget
-from kivy.logger import Logger
-from gh_io_status_grid import gh_io_status_grid
-from kivy.graphics import Color, Ellipse, Rectangle, RoundedRectangle
-import sys
-import multiprocessing
-from time import sleep
-
-
-class RootWidget(BoxLayout):
-    def __init__(self, **kwargs):
-        self.orientation='horizontal'
-        super(RootWidget, self).__init__(**kwargs)
-        
-        b1=Button(text='Exit',size_hint=(0.3,1))
-        b1.bind(on_release=self.quit_app)
-        
-        self.ti1=BoxLayout()
-                  
-        self.add_widget(self.ti1)
-        self.add_widget(b1)
-                             
-        
-    def start_io(self):
-        self._gio=gh_io_dispatcher()
-        self._gio.start_io()
-        self._gio.bind(on_io_data=self._process_io_data)
-                       
-                             
-        io_desc=self._gio.io_query('OPDESC?',0,15)  #command,data,timeout - need long timeout if using spawn instead of fork
-        Logger.info("init_io: IO Descriptions:")
-        if io_desc is not None:
-            Logger.info(io_desc)
-        else:
-            Logger.exception("init_io: OPDESC? Query Timed Out (No response from gh_io process)")
-            sys.exit(1)
+if __name__ == "__main__":
+    from kivy.app import App
+    from kivy.core.window import Window
+    from kivy.uix.button import Button
+    from kivy.uix.boxlayout import BoxLayout
+    from kivy.uix.textinput import TextInput
+    from kivy.uix.widget import Widget
+    from kivy.logger import Logger
+    from gh_io_status_grid import gh_io_status_grid
+    from kivy.graphics import Color, Ellipse, Rectangle, RoundedRectangle
+    import sys
+    import multiprocessing
+    from time import sleep
     
-        #Build the status grid - see gh_io_status_grid.py
-        self.statusgrid=gh_io_status_grid(all_op_desc=io_desc)
-        self.ti1.add_widget(self.statusgrid)  
-        self._gio.start_events()
-        
-    #this is the callback that is triggered by the io_q events
-    #here it just prints the data
-    def _process_io_data(self,*args):
-        self.statusgrid.process_data(args[1])
-        #Logger.debug("gh_io_dispatcher:"+str(args[1]))
-        
-    def stop_io(self,*args):
-        self._gio.stop_io()
-        
-    def quit_app(self,*args):
-        App.get_running_app().stop()
-        
-
-class gh_db_dispatcher_test_app(App):
-      
-    def build(self):
-        self._running=False
-        self._rw=RootWidget()
-        return self._rw  
-
-    def on_start(self):        
-        self._rw.start_io()
-        self._running=True
     
-    def on_stop(self):        
-        if self._running:  #prevent it running twice due to multiple clicks
-            self._rw.stop_io()
+    class RootWidget(BoxLayout):
+        def __init__(self, **kwargs):
+            self.orientation='horizontal'
+            super(RootWidget, self).__init__(**kwargs)
+            
+            b1=Button(text='Exit',size_hint=(0.3,1))
+            b1.bind(on_release=self.quit_app)
+            
+            self.ti1=BoxLayout()
+                      
+            self.add_widget(self.ti1)
+            self.add_widget(b1)
+                                 
+            
+        def start_io(self):
+            self._gio=gh_io_dispatcher()
+            self._gio.start_io()
+            self._gio.bind(on_io_data=self._process_io_data)
+                           
+                                 
+            io_desc=self._gio.io_query('OPDESC?',0,15)  #command,data,timeout - need long timeout if using spawn instead of fork
+            Logger.info("init_io: IO Descriptions:")
+            if io_desc is not None:
+                Logger.info(io_desc)
+            else:
+                Logger.exception("init_io: OPDESC? Query Timed Out (No response from gh_io process)")
+                sys.exit(1)
+        
+            #Build the status grid - see gh_io_status_grid.py
+            self.statusgrid=gh_io_status_grid(all_op_desc=io_desc)
+            self.ti1.add_widget(self.statusgrid)  
+            self._gio.start_events()
+            
+        #this is the callback that is triggered by the io_q events
+        #here it just prints the data
+        def _process_io_data(self,*args):
+            self.statusgrid.process_data(args[1])
+            #Logger.debug("gh_io_dispatcher:"+str(args[1]))
+            
+        def stop_io(self,*args):
+            self._gio.stop_io()
+            
+        def quit_app(self,*args):
+            App.get_running_app().stop()
+            
+    
+    class gh_db_dispatcher_test_app(App):
+          
+        def build(self):
             self._running=False
-
-if __name__ == "__main__":   
-    multiprocessing.set_start_method('fork')
-    prctl.set_proctitle('gh_main process') #allows process to be idenfified in htop
-    prctl.set_name('kivy main') #allows process to be idenfified in htop
+            self._rw=RootWidget()
+            return self._rw  
+    
+        def on_start(self):        
+            self._rw.start_io()
+            self._running=True
+        
+        def on_stop(self):        
+            if self._running:  #prevent it running twice due to multiple clicks
+                self._rw.stop_io()
+                self._running=False
+       
+    if platform.system()=='Linux':
+        multiprocessing.set_start_method('fork')
+    pr_cont.set_proctitle('gh_main process') #allows process to be idenfified in htop
+    pr_cont.set_name('kivy main') #allows process to be idenfified in htop
     gh_db_dispatcher_test_app().run()

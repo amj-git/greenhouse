@@ -1,7 +1,13 @@
 #DHT22 Temp/Humidity sensor access
 
 import time
-import pigpio
+try:
+    import pigpio  #we use pigpio for the DHT22s.  The ADAFruit library is unreliable.
+                    #note you have to start the pigpio demon first before running
+    _pigpio_ok=True
+except ImportError:
+    _pigpio_ok=False
+
 
 class sensor:
    """

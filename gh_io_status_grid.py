@@ -29,11 +29,11 @@ class gh_io_status_grid(BoxLayout):
                 ti2=Label(size_hint=(0.25,1),markup=True,\
                           font_size='25sp',halign='right',\
                           valign='middle',color=[0.5,1,0,1])  #Data
-                ti2.text_size=ti2.size
+                #ti2.text_size=ti2.size
                 ti3=Label(size_hint=(0.25,1),font_size='19sp',\
                           halign='left',valign='middle',\
                           color=[0.9,0.9,0.9,1])  #units
-                ti3.text_size=ti3.size
+                #ti3.text_size=ti3.size
                 self._controls[tname][pname]=ti2
                 self._statuslabel[tname][pname]=ti0
                 lay.add_widget(ti0)

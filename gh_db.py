@@ -13,7 +13,7 @@ from time import sleep
 from datetime import datetime, timedelta
 import queue
 from threading import Thread
-import prctl
+from process_control import pr_cont
 
 import gh_io
 
@@ -37,7 +37,7 @@ class gh_mon(Thread):
         pass
     
     def run(self):
-        prctl.set_name('gh_mon') #allows process to be idenfified in htop
+        pr_cont.set_name('gh_mon') #allows process to be idenfified in htop
         self._startup()
         while(self.__running):
             try:
@@ -117,8 +117,8 @@ class gh_db:
 #END class gh_io_dispatcher-------------------------------------
 
 def gh_db_test():
-    prctl.set_name('gh_db_test main') #allows process to be idenfified in htop
-    prctl.set_proctitle('app main process') #allows process to be idenfified in htop
+    pr_cont.set_name('gh_db_test main') #allows process to be idenfified in htop
+    pr_cont.set_proctitle('app main process') #allows process to be idenfified in htop
     
     db=gh_db()
     db.start_io()

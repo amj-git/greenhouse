@@ -52,6 +52,13 @@ these implement _startup(), _heartbeat(), _shutdown(), _set_op_desc()
 The _heartbeat() function adds data to the output queue
 
 '''
+try:
+    import pigpio  #we use pigpio for the DHT22s.  The ADAFruit library is unreliable.
+                    #note you have to start the pigpio demon first before running
+    _pigpio_ok=True
+except ImportError:
+    _pigpio_ok=False
+
 import signal
 import time
 import threading
@@ -65,12 +72,10 @@ from random import seed,random
 import queue
 from io_buffer import IO_Buffer
 
-import pigpio  #we use pigpio for the DHT22s.  The ADAFruit library is unreliable.
-                #note you have to start the pigpio demon first before running
 from io_w1 import sw_5v_pin, w1_read_temp
 from io_bh1750 import io_bh1750, BH1750_DEFAULT
 import io_dht22
-import prctl
+from process_control import pr_cont
 
 #START class IO_Thread------------------------------------------------
 class IO_Thread(Thread):
@@ -102,7 +107,7 @@ class IO_Thread(Thread):
         pass
     
     def run(self):
-        prctl.set_name(self._threadname) #allows process to be idenfified in htop
+        pr_cont.set_name(self._threadname) #allows process to be idenfified in htop
         self._startup()
         while(self.__running):
             lasttime=datetime.now()
@@ -443,13 +448,13 @@ class IO_Thread_Manager:
         return self._iob
             
     def _start_pigpio(self):
-        if not self._sim_hw:
+        if not self._sim_hw and _pigpio_ok:            
             self._h_gpio=pigpio.pi()
             self._h_gpio.set_mode( sw_5v_pin, pigpio.OUTPUT)  #5V control pin
             self._h_gpio.write(sw_5v_pin,1)  #turn on the temp sensor power
         
     def _stop_pigpio(self):
-        if not self._sim_hw:
+        if not self._sim_hw and _pigpio_ok:
             self._h_gpio.stop()
                   
     '''all_op_desc=get_all_op_descriptions()

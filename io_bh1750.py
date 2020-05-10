@@ -1,4 +1,10 @@
-import smbus
+try:
+    import smbus  #we use pigpio for the DHT22s.  The ADAFruit library is unreliable.
+                    #note you have to start the pigpio demon first before running
+    _smbus_ok=True
+except ImportError:
+    _smbus_ok=False
+
 import time
 
 # Define some constants from the datasheet
@@ -34,12 +40,14 @@ def convertToNumber(data):
 class io_bh1750:
     def __init__(self,addr=BH1750_DEFAULT):
         #self._bus = smbus.SMBus(0) # Rev 1 Pi uses 0
-        self._bus = smbus.SMBus(1)  # Rev 2 Pi uses 1
-        self._addr=addr
-        
+        if _smbus_ok:
+            self._bus = smbus.SMBus(1)  # Rev 2 Pi uses 1
+            self._addr=addr
+            
     def read(self):
-        data = self._bus.read_i2c_block_data(self._addr,ONE_TIME_HIGH_RES_MODE_1)
-        return convertToNumber(data)        
+        if _smbus_ok:
+            data = self._bus.read_i2c_block_data(self._addr,ONE_TIME_HIGH_RES_MODE_1)
+            return convertToNumber(data)        
 
 
 def main():
