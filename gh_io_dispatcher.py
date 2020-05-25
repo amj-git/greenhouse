@@ -57,7 +57,7 @@ import queue
 from process_control import pr_cont
 
 MAX_GH_EV_Q_LEN = 50
-EV_Q_CLOCK_PERIOD = 0.5 #Period of checking GH_EV_Q in seconds
+EV_Q_CLOCK_PERIOD = 0.2 #Period of checking GH_EV_Q in seconds
 
 #START class gh_io_dispatcher-------------------------------------
 class gh_io_dispatcher(gh_db,EventDispatcher):
