@@ -16,6 +16,7 @@ from threading import Thread
 from process_control import pr_cont
 
 import gh_io
+import gh_db_manager
 
 MAX_IO_Q_LEN = 100
 
@@ -63,8 +64,18 @@ class gh_db:
                 
     def start_io(self):
         self._gh_io_process.start()  #start IO process
+        self._init_db_manager()          #wait for this to complete - can be slow
+        self.send_io_command('START',0)  #This starts the threads
         print("gh_db: IO Started.")
-        
+      
+    '''Initialise the database manager
+    this requires a copy of the output descriptions, to the IO process
+    must be started first
+    '''
+    def _init_db_manager(self):
+        io_desc=self.io_query('OPDESC?',0,15)  #command,data,timeout - need long timeout if using spawn instead of fork
+        self._db_manager=gh_db_manager.gh_db_manager(all_op_desc=io_desc)
+    
     #this is the despatch function.  It is called by the thread
     #every time data is received in the io_q
     #you can override this in a derived method for your preferred behaviour
@@ -74,7 +85,7 @@ class gh_db:
         
     #add function here to save the data to the database
     def _save_to_db(self,data):
-        pass
+        self._db_manager.process_data(data)
         
     def start_events(self):
         self._gh_mon.start()  #start receiving thread
@@ -108,13 +119,12 @@ class gh_db:
         self._gh_mon.join()
         print("gh_db: IO Stopped.")
         
+        #flush all data to disk
+        self._db_manager.commit_all()
+        
     def get_io_q(self):
         return self._io_q
 #START class gh_db-------------------------------------
-
-#START class gh_io_dispatcher-------------------------------------
-
-#END class gh_io_dispatcher-------------------------------------
 
 def gh_db_test():
     pr_cont.set_name('gh_db_test main') #allows process to be idenfified in htop

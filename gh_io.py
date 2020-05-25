@@ -95,8 +95,9 @@ def gh_io_main(io_q,io_ctrl):
     
     all_op_desc=io_manager.get_all_op_descriptions()
            
-    io_manager.start_threads()
-    iob=io_manager.get_iob()  #get the IO buffer
+    #io_manager.start_threads()  #moved to be triggered by START command
+    #iob=io_manager.get_iob()  #get the IO buffer
+    iob=None
        
     pr_cont.set_proctitle('gh_io process') #allows process to be idenfified in htop
     pr_cont.set_name('gh_io main') #allows process to be idenfified in htop
@@ -117,11 +118,15 @@ def gh_io_main(io_q,io_ctrl):
                 break
             if(cmd=='OPDESC?'):  #output descriptions query
                 io_ctrl.send(all_op_desc)
+            if(cmd=='START'):
+                io_manager.start_threads()
+                iob=io_manager.get_iob()  #get the IO buffer
         try:
             op_data=local_io_q.get(timeout=0.1) #Block here max 100ms
         except queue.Empty:
             continue
-        iob.add_data(op_data)  #feed the local buffer.  This may block
+        if iob is not None:
+            iob.add_data(op_data)  #feed the local buffer.  This may block
                                 #if any threads have locked it while they read
         if io_q is not None:
             try:
