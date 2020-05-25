@@ -20,17 +20,19 @@ if __name__ == "__main__":
     import os
     
     #choose CLI or GUI on Raspberry Pi
-    StartMode='rpi_cli'   #options: 'rpi_cli', 'general'
+    StartMode='general'   #options: 'sdl2', 'general'
         
     #on windows, override
     if platform.system()=='Windows':   
         StartMode='general'   
         
-    if StartMode=='rpi_cli':
+    if StartMode=='sdl2':
         '''This uses SDL2 as the backend
         This is intended for local CLI-mode operation (e.g. via a touchscreen)
         If you run this with the GUI, it will work and you can see it via
         VNC but it is cripplingly slow.
+        I couldn't get the touch screen to work with SDL (won't coexist with mtdev properly)
+        I couldn't get KMSDRM drivers to work at all (tried recompiling SDL with correct options and various other fixes - waste of several evenings)
         '''
         os.environ['KIVY_WINDOW']='sdl2'
         os.environ['KIVY_TEXT']='sdl2'
