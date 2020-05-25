@@ -5,7 +5,6 @@ Manages access to the database itself
 Uses sqlite3 database
 
 '''
-from virtualenv.create.via_global_ref.builtin import via_global_self_do
 
 '''param_db
 Parameter database handler
