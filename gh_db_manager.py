@@ -43,9 +43,12 @@ from datetime import datetime, timedelta
 DB_DIR='db/'
 MAX_COMMIT_DELAY=30  #max number of seconds to not flush data to db
 
+#Timestamp is integer number of milliseconds since 1/1/1970 
 def datetime_to_timestamp(d):
     return round(d.timestamp()*1000)
 
+#Converts back to time.  Note there can be issues with local time and handling of leap seconds
+#needs care
 def timestamp_to_datetime(ts):
     return datetime.fromtimestamp(ts/1000)
 
@@ -65,6 +68,9 @@ class param_db:
                 
     def _open_db(self):
         with self._lock:
+            #connect with thread checking disabled
+            #we use _lock to prevent simultaneous access.
+            #write_value is usually called by a different thread
             self._db=sqlite3.connect(self._dbname, check_same_thread=False)
             self._db.execute('''CREATE TABLE IF NOT EXISTS raw_data (
                             timestamp integer PRIMARY KEY,
@@ -84,7 +90,7 @@ class param_db:
         if self._db is not None:
             self._commit()
             self._db.close()
-        
+            
     def __del__(self):
         self._close_db()
         
@@ -165,7 +171,7 @@ class param_db:
             #tstart=datetime.now()
             self._db.execute('INSERT INTO raw_data VALUES (?,?)',data)
             self._commit_if_due()
-            tstop=datetime.now()
+            #tstop=datetime.now()
             #tdelta=(tstop-tstart).total_seconds()
             #print("write time=",tdelta,"s")
             '''
@@ -174,7 +180,9 @@ class param_db:
             for the 11 threads we have running this can total over 1 second.
             This slowly fills the queue up, and we start losing data.
             If you comment out the commit, the time goes to below 1ms.
-            Therefore a good method is to only commit at a slower interval.                        
+            Therefore a good method is to only commit at a slower interval.   
+            Hence the commit_if_due functionality
+            MAX_COMMIT_DELAY is the maximum time with no flushing                     
             '''
             
     #Flush data
@@ -206,12 +214,15 @@ The constructor accepts an all_op_desc object from the IO_thread_manager
 It initialises the relevant databases
 
 Process data accepts data from a thread and saves it to the appropriate db
+
+_dbs stores a dictionary of the param_db's associated with each thread/parameter
 '''
 class gh_db_manager:
     
     def __init__(self,**kwargs):
         self._all_op_desc=kwargs.get('all_op_desc',None)
         self._dbs=dict()
+        #initialise one database for every thread/parameter
         for tname in self._all_op_desc:
             self._dbs[tname]=dict()
             for pname in self._all_op_desc[tname]:
