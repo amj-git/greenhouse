@@ -41,7 +41,12 @@ from datetime import datetime, timedelta
 
 
 DB_DIR='db/'
-MAX_COMMIT_DELAY=30  #max number of seconds to not flush data to db
+MAX_COMMIT_DELAY=20 #max number of seconds to not flush data to db
+                    #Note that data is only flushed when a new point is received
+                    #so if the periodicity of the data is greater than MAX_COMMIT_DELAY,
+                    #it won't get written until later.
+                    
+DEFAULT_TCHUNK=10*60*1000  #Default compression chunk size in ms
 
 #Timestamp is integer number of milliseconds since 1/1/1970 
 def datetime_to_timestamp(d):
@@ -85,10 +90,12 @@ class param_db:
                             val text)''')
             self.commit()
             self._write_meta_data()
+            #calculate the time after which the next compression can proceed
+            self._Tnext_compress=self._get_last_comp_data_time()+self._Tchunk  
             
     def _close_db(self):
         if self._db is not None:
-            self._commit()
+            self.commit()
             self._db.close()
             
     def __del__(self):
@@ -109,6 +116,10 @@ class param_db:
         else:
             #print('No val_comp_mult found in meta_data table')
             pass
+        if 'Tchunk' in self._meta_data:
+            self._Tchunk=float(self._meta_data['Tchunk'])  #store with db            
+        else:
+            self._Tchunk=DEFAULT_TCHUNK
         #print(self._meta_data)
         #print('length=',len(self._meta_data))
         return len(self._meta_data)
@@ -124,9 +135,10 @@ class param_db:
             for key in self._op_desc:
                 data.append( (key,self._op_desc[key]) )
             data.append( ('val_comp_mult','{:e}'.format(self._val_comp_mult)) )
+            data.append( ('Tchunk','{d}'.format(DEFAULT_TCHUNK)) )
             self._db.executemany('INSERT INTO meta_data VALUES (?,?)',data)
             self.commit()
-            self._read_meta_data()
+            self._read_meta_data() #this ensures self._meta_data gets set.
             
             
     '''
@@ -166,24 +178,26 @@ class param_db:
         value is a numeric format
     '''
     def write_value(self,timestamp,val):
-        data=(datetime_to_timestamp(timestamp),self.compress_val(val))
+        timestamp_ms=datetime_to_timestamp(timestamp)
+        data=(timestamp_ms,self.compress_val(val))
         with self._lock:
             #tstart=datetime.now()
             self._db.execute('INSERT INTO raw_data VALUES (?,?)',data)
-            self._commit_if_due()
+            self._commit_if_due(timestamp_ms)
             #tstop=datetime.now()
             #tdelta=(tstop-tstart).total_seconds()
             #print("write time=",tdelta,"s")
             '''
             Committing one measurement takes 120 - 200ms on windows
             All thread data has been serialised thought the queue, so
-            for the 11 threads we have running this can total over 1 second.
+            for the 11 params we have running this can total over 1 second.
             This slowly fills the queue up, and we start losing data.
             If you comment out the commit, the time goes to below 1ms.
             Therefore a good method is to only commit at a slower interval.   
             Hence the commit_if_due functionality
             MAX_COMMIT_DELAY is the maximum time with no flushing                     
             '''
+            
             
     #Flush data
     def commit(self):
@@ -192,10 +206,17 @@ class param_db:
         self._commit_pending=False
         
     #Flush data only if it's due
-    def _commit_if_due(self):
+    #accepts the timestamp of the last data to allow calculation of whether
+    #a compression cycle should happen
+    def _commit_if_due(self,timestamp_ms):
         self._commit_pending=True
         if self.commit_due():
+            #write the data
             self.commit()
+            #do a compression cycle
+            #compression will cause delay, so do it only every MAX_COMMIT_DELAY seconds
+            if(timestamp_ms>self._Tnext_compress):
+                self.compress_next_chunk()
                 
     #Check if data needs flushing
     def commit_due(self):
@@ -204,13 +225,49 @@ class param_db:
             if(tdelta>MAX_COMMIT_DELAY):
                 return True
         return False
+    
+    #This finds the last timestamp in the comp_data table
+    def _get_last_comp_data_time(self):
+        cur=self._db.cursor()
+        cur.execute("SELECT MAX(timestamp) FROM comp_data")
+        Tcl=cur.fetchone()[0]
+        if Tcl is None:
+            Tcl=0
+        return Tcl
+    '''
+    
+    Gets a chunk from raw_data and compresses it into comp_data
+    The chunk size is self._Tchunk
+    Returns the timestamp of the chunk 
+    '''
+    def compress_next_chunk(self):
+        Tcl=self._get_last_comp_data_time()
+        cur=self._db.cursor()
+        cur.execute("SELECT MIN(timestamp) FROM raw_data \
+                    WHERE timestamp>?",(Tcl,))
+        Traw_start=cur.fetchone()[0]
+        cur.execute("SELECT min(val),max(val),avg(val),max(timestamp) \
+                    FROM raw_data WHERE timestamp>=? AND timestamp<=? \
+                    ORDER BY timestamp ASC",\
+                    (Traw_start,Traw_start+self._Tchunk))
+        data=cur.fetchone()
+        (min_val,max_val,avg_val,ts)=(data[0],data[1],data[2],data[3])
+        print("param_db: compress_next_chunk (",self._dbname,")")
+        print("Tcl=",Tcl,"Traw_start=",Traw_start,"ts=",ts,\
+              "min_val=",min_val,"max_val=",max_val,"avg_val=",avg_val)
+        self._db.execute('INSERT INTO comp_data VALUES (?,?,?,?)',(ts,avg_val,min_val,max_val))
+        self.commit()
+        self._Tnext_compress=ts+self._Tchunk  #this is the next point time that can trigger a compression cycle
+        return ts
+        
+         
 
 '''gh_db_manager----------------------------------------------
 Database Manager
 
 Manages access to all database files 
 
-The constructor accepts an all_op_desc object from the IO_thread_manager
+The constructor accepts an all_op_desc object from IO_thread_manager
 It initialises the relevant databases
 
 Process data accepts data from a thread and saves it to the appropriate db
@@ -219,6 +276,8 @@ _dbs stores a dictionary of the param_db's associated with each thread/parameter
 '''
 class gh_db_manager:
     
+    #gh_db_manager constructor - accepts a dictionary containing all of the parameter
+    #descriptions, as provided by IO_thread_manager
     def __init__(self,**kwargs):
         self._all_op_desc=kwargs.get('all_op_desc',None)
         self._dbs=dict()
@@ -233,9 +292,14 @@ class gh_db_manager:
                                                  op_desc=op_desc)
         
     def process_data(self,data):
+        #get the associated parameter database
         pdb=self._dbs[data['tname']][data['pname']]
+        #write the data
         pdb.write_value(data['time'],data['data'])
         
+    #writes all pending data to disk.  This is used prior to exiting the program
+    #we allow up to MAX_COMMIT_DELAY seconds of data to build up to speed up the program
+    #if each point were committed as it arrived, it would be too slow
     def commit_all(self):
         for tname in self._dbs:
             for pname in self._dbs[tname]:
