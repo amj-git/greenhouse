@@ -140,6 +140,8 @@ class param_db:
             self.commit()
             self._read_meta_data() #this ensures self._meta_data gets set.
             
+    def get_meta_data(self):
+        return self._meta_data
             
     '''
         _setup_multipliers
@@ -259,8 +261,18 @@ class param_db:
         self.commit()
         self._Tnext_compress=ts+self._Tchunk  #this is the next point time that can trigger a compression cycle
         return ts
-        
-         
+      
+    '''
+    Returns raw data between two timestamps (in ms)
+    '''
+    def get_raw_line(self,Tstart,Tstop):
+        with self._lock:
+            rows=self._db.execute("SELECT * FROM raw_data WHERE timestamp>=? AND timestamp<=? ORDER BY timestamp ASC",\
+                            (Tstart,Tstop))
+            data=[]
+            for row in rows:
+                data.append ((row[0],row[1]*self._val_uncomp_mult))
+            return data 
 
 '''gh_db_manager----------------------------------------------
 Database Manager
@@ -293,9 +305,12 @@ class gh_db_manager:
         
     def process_data(self,data):
         #get the associated parameter database
-        pdb=self._dbs[data['tname']][data['pname']]
+        pdb=self.get_database(data['tname'],data['pname'])
         #write the data
         pdb.write_value(data['time'],data['data'])
+        
+    def get_database(self,tname,pname):
+        return self._dbs[tname][pname]
         
     #writes all pending data to disk.  This is used prior to exiting the program
     #we allow up to MAX_COMMIT_DELAY seconds of data to build up to speed up the program

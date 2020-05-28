@@ -76,6 +76,9 @@ class gh_db:
         io_desc=self.io_query('OPDESC?',0,15)  #command,data,timeout - need long timeout if using spawn instead of fork
         self._db_manager=gh_db_manager.gh_db_manager(all_op_desc=io_desc)
     
+    def get_db_manager(self):
+        return self._db_manager
+    
     #this is the despatch function.  It is called by the thread
     #every time data is received in the io_q
     #you can override this in a derived method for your preferred behaviour
