@@ -3,7 +3,6 @@
 '''
 Main
 '''
-
 #Environment settings for running in Raspberry PI CLI mode
 
 '''
@@ -104,7 +103,13 @@ if __name__ == "__main__":
             #Graph
             self._db_manager=self._gio.get_db_manager()
             db=self._db_manager.get_database('Probe 1','Temp')
-            self.io_graph=gh_io_graph.gh_io_graph(db=db)
+            self.io_graph=gh_io_graph.gh_io_graph(db=db,\
+                                                  x_ticks_major=60*60*1000,\
+                                                  x_ticks_minor=6,\
+                                                  padding=5,\
+                                                  x_grid=True,\
+                                                  y_grid=True,\
+                                                  xlabel='Timestamp')
             self.ti1.add_widget(self.io_graph)
              
             #Start IO running
