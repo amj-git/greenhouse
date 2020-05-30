@@ -1,5 +1,6 @@
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.textinput import TextInput
+from kivy.uix.behaviors import ButtonBehavior
 from kivy.uix.label import Label
 from led import Led
 
@@ -15,6 +16,12 @@ LED_COL_RED_OFF = [0.2,0.0,0.0,1]
 LED_COL_RED_ON  = [1.00,0.0,0.0,1]
 LED_COL_YEL_OFF = [0.14,0.14,0.0,1]
 LED_COL_YEL_ON  = [1.0,1.0,0.0,1]
+
+class tagged_label(Label):
+    def __init__(self,**kwargs):
+        self.tname=kwargs.pop('tname',None)
+        self.pname=kwargs.pop('pname',None)
+        super(tagged_label, self).__init__(**kwargs)
 
 class gh_io_status_grid(BoxLayout):
     def __init__(self,**kwargs):
@@ -36,7 +43,9 @@ class gh_io_status_grid(BoxLayout):
                         color_on=LED_COL_YEL_ON,color_off=LED_COL_YEL_OFF,\
                         ) #LED to pulse for activity
                 ti0.state='on'  #Initially show that no data has been received
-                ti1=Label(size_hint=(1,1),font_size=fsize1)  #Description
+                ti1=tagged_label(size_hint=(1,1),font_size=fsize1,\
+                                 tname=tname,pname=pname)  #Description
+                ti1.bind(on_release=self.desc_click)
                 ti2=Label(size_hint=(0.25,1),markup=True,\
                           font_size='25sp',halign='right',\
                           valign='middle',color=[0.5,1,0,1])  #Data
@@ -64,4 +73,10 @@ class gh_io_status_grid(BoxLayout):
         lbl.color_off=LED_COL_BLUE_OFF
         lbl.auto_off=True
         lbl.toggle_state()
+        
+    def desc_click(self,inst):
+        self._sel_tname=inst.tname
+        self._sel_pname=inst.pname
+        print("clicked")
+        print((self._sel_tname,self._sel_pname))
         

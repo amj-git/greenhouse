@@ -60,6 +60,7 @@ if __name__ == "__main__":
     from kivy.uix.boxlayout import BoxLayout
     from kivy.uix.textinput import TextInput
     from kivy.uix.widget import Widget
+    from kivy.uix.screenmanager import ScreenManager, Screen
     from kivy.logger import Logger
     from gh_io_status_grid import gh_io_status_grid
     from kivy.graphics import Color, Ellipse, Rectangle, RoundedRectangle
@@ -67,20 +68,106 @@ if __name__ == "__main__":
     import multiprocessing
     from time import sleep
     
-    
-    class RootWidget(BoxLayout):
+    class IOStatusScreen(Screen):
         def __init__(self, **kwargs):
-            self.orientation='horizontal'
+            super(IOStatusScreen, self).__init__(**kwargs)
+            
+            #ROOT STRUCTURE
+            self.root_box=BoxLayout(orientation='horizontal')
+            self.add_widget(self.root_box)
+            self.non_menu_root=BoxLayout()
+            self.root_box.add_widget(self.non_menu_root)
+            self.menu_root=BoxLayout(orientation='vertical',size_hint=(0.3,1))
+            self.root_box.add_widget(self.menu_root)
+                                         
+            #MENU
+            b1=Button(text='Graph...',)
+            b1.bind(on_release=self.page_jump1)
+            self.menu_root.add_widget(b1)
+            
+            b2=Button(text='Exit',)
+            b2.bind(on_release=self.quit_app)
+            self.menu_root.add_widget(b2)
+            
+        def quit_app(self,*args):
+            App.get_running_app().stop()    
+            
+        def start_io(self,gio,io_desc):
+            #GRID
+            self.statusgrid=gh_io_status_grid(all_op_desc=io_desc)
+            self.non_menu_root.add_widget(self.statusgrid) 
+            gio.bind(on_io_data=self.process_io_data)
+            
+        def process_io_data(self,*args):
+            self.statusgrid.process_data(args[1])
+            
+        def page_jump1(self,*args):
+            self.parent.current='graph_screen'
+            
+    class IOGraphScreen(Screen):
+        def __init__(self, **kwargs):
+            super(IOGraphScreen, self).__init__(**kwargs)
+            
+            #ROOT STRUCTURE
+            self.root_box=BoxLayout(orientation='horizontal')
+            self.add_widget(self.root_box)
+            self.non_menu_root=BoxLayout()
+            self.root_box.add_widget(self.non_menu_root)
+            self.menu_root=BoxLayout(orientation='vertical',size_hint=(0.3,1))
+            self.root_box.add_widget(self.menu_root)
+                                         
+            #MENU
+            b0=Button(text='Refresh',)
+            b0.bind(on_release=self.refresh_graph)
+            self.menu_root.add_widget(b0)
+            
+            b1=Button(text='Status...',)
+            b1.bind(on_release=self.page_jump1)
+            self.menu_root.add_widget(b1)
+            
+            b2=Button(text='Exit',)
+            b2.bind(on_release=self.quit_app)
+            self.menu_root.add_widget(b2)
+            
+        def quit_app(self,*args):
+            App.get_running_app().stop()    
+            
+        def page_jump1(self,*args):
+            self.parent.current='status_screen'
+            
+        def refresh_graph(self,*args):
+            db=self._db_manager.get_database('Probe 1','Temp')
+            self.io_graph.set_database(db)
+            
+        def start_io(self,gio,io_desc):
+            #GRAPH
+            self._db_manager=gio.get_db_manager()
+            db=self._db_manager.get_database('Probe 1','Temp')
+            self.io_graph=gh_io_graph.gh_io_graph(db=db,\
+                                                  x_ticks_major=60*60*1000,\
+                                                  x_ticks_minor=6,\
+                                                  y_ticks_major=10,\
+                                                  padding=5,\
+                                                  x_grid=True,\
+                                                  y_grid=True,\
+                                                  y_grid_label=True,\
+                                                  x_grid_label=True,\
+                                                  xlabel='Timestamp (ms)')
+            self.non_menu_root.add_widget(self.io_graph)
+        
+        
+        
+    
+    class RootWidget(ScreenManager):
+        def __init__(self, **kwargs):
             super(RootWidget, self).__init__(**kwargs)
             
-            b1=Button(text='Exit',size_hint=(0.3,1))
-            b1.bind(on_release=self.quit_app)
-            
-            self.ti1=BoxLayout()
-                      
-            self.add_widget(self.ti1)
-            self.add_widget(b1)
+            self.io_graph_screen=IOGraphScreen(name='graph_screen')
+            self.add_widget(self.io_graph_screen)
                                  
+            self.io_status_screen=IOStatusScreen(name='status_screen')
+            self.add_widget(self.io_status_screen)
+            
             
         def start_io(self):
             self._gio=gh_io_dispatcher()
@@ -95,22 +182,8 @@ if __name__ == "__main__":
                 Logger.exception("init_io: OPDESC? Query Timed Out (No response from gh_io process)")
                 sys.exit(1)
         
-            #Build the status grid - see gh_io_status_grid.py
-            #self.statusgrid=gh_io_status_grid(all_op_desc=io_desc)
-            #self.ti1.add_widget(self.statusgrid) 
-            #self._gio.bind(on_io_data=self._process_io_data)
-            
-            #Graph
-            self._db_manager=self._gio.get_db_manager()
-            db=self._db_manager.get_database('Probe 1','Temp')
-            self.io_graph=gh_io_graph.gh_io_graph(db=db,\
-                                                  x_ticks_major=60*60*1000,\
-                                                  x_ticks_minor=6,\
-                                                  padding=5,\
-                                                  x_grid=True,\
-                                                  y_grid=True,\
-                                                  xlabel='Timestamp')
-            self.ti1.add_widget(self.io_graph)
+            self.io_status_screen.start_io(self._gio,io_desc)
+            self.io_graph_screen.start_io(self._gio,io_desc)
              
             #Start IO running
             self._gio.start_events()
@@ -118,7 +191,7 @@ if __name__ == "__main__":
         #this is the callback that is triggered by the io_q events
         #here it just prints the data
         def _process_io_data(self,*args):
-            self.statusgrid.process_data(args[1])
+            self.io_status_screen.process_data(args[1])
             #Logger.debug("gh_io_dispatcher:"+str(args[1]))
             
         def stop_io(self,*args):

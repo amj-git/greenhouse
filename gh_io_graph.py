@@ -12,7 +12,7 @@ import kgraph
 import gh_db_manager
 from datetime import datetime, timedelta
 
-class db_raw_line(kgraph.SmoothLinePlot):
+class db_raw_line(kgraph.LinePlot):
     def __init__(self,**kwargs):
         self.set_database(kwargs.pop('db',None))
         super(db_raw_line, self).__init__(**kwargs)        
