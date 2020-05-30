@@ -70,6 +70,7 @@ if __name__ == "__main__":
     
     class IOStatusScreen(Screen):
         def __init__(self, **kwargs):
+            self._graph_screen=kwargs.pop('graph_screen',None)
             super(IOStatusScreen, self).__init__(**kwargs)
             
             #ROOT STRUCTURE
@@ -97,12 +98,16 @@ if __name__ == "__main__":
             self.statusgrid=gh_io_status_grid(all_op_desc=io_desc)
             self.non_menu_root.add_widget(self.statusgrid) 
             gio.bind(on_io_data=self.process_io_data)
+            self.statusgrid.bind(on_desc_click=self.desc_click)
             
         def process_io_data(self,*args):
             self.statusgrid.process_data(args[1])
             
         def page_jump1(self,*args):
             self.parent.current='graph_screen'
+            
+        def desc_click(self,*args):
+            self._graph_screen.set_db(args[1])
             
     class IOGraphScreen(Screen):
         def __init__(self, **kwargs):
@@ -139,6 +144,12 @@ if __name__ == "__main__":
             db=self._db_manager.get_database('Probe 1','Temp')
             self.io_graph.set_database(db)
             
+        #accepts (tname,pname)
+        def set_db(self,db):
+            (tname,pname)=db
+            db=self._db_manager.get_database(tname,pname)
+            self.io_graph.set_database(db)
+            
         def start_io(self,gio,io_desc):
             #GRAPH
             self._db_manager=gio.get_db_manager()
@@ -165,7 +176,8 @@ if __name__ == "__main__":
             self.io_graph_screen=IOGraphScreen(name='graph_screen')
             self.add_widget(self.io_graph_screen)
                                  
-            self.io_status_screen=IOStatusScreen(name='status_screen')
+            self.io_status_screen=IOStatusScreen(name='status_screen',\
+                                                 graph_screen=self.io_graph_screen)
             self.add_widget(self.io_status_screen)
             
             
@@ -185,7 +197,7 @@ if __name__ == "__main__":
             self.io_status_screen.start_io(self._gio,io_desc)
             self.io_graph_screen.start_io(self._gio,io_desc)
              
-            #Start IO running
+            #Start IO events running
             self._gio.start_events()
             
         #this is the callback that is triggered by the io_q events
@@ -200,7 +212,7 @@ if __name__ == "__main__":
         def quit_app(self,*args):
             App.get_running_app().stop()
             
-    
+            
     class gh_db_dispatcher_test_app(App):
           
         def build(self):

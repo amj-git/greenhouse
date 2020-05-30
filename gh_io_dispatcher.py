@@ -54,6 +54,7 @@ from gh_db import gh_db
 from kivy.event import EventDispatcher
 from kivy.clock import Clock
 import queue
+from kivy.logger import Logger
 from process_control import pr_cont
 
 MAX_GH_EV_Q_LEN = 50
@@ -79,7 +80,7 @@ class gh_io_dispatcher(gh_db,EventDispatcher):
         try:
             self._gh_ev_q.put(data,block=False)
         except queue.Full:  #consumer must have stopped - throw data away
-            Logger.exception("IO_Thread:"+self._threadname+" _consumer_fn(): Unable to output data - Queue is full")
+            Logger.info("gh_io_dispatcher: _consumer_fn(): Unable to output data - Queue gh_ev_q is full")
         
     #this function is running on a clock heartbeat in the kivy thread
     #it receives data from the _consumer_fn() via the gh_ev_q
@@ -109,7 +110,6 @@ if __name__ == "__main__":
     from kivy.uix.boxlayout import BoxLayout
     from kivy.uix.textinput import TextInput
     from kivy.uix.widget import Widget
-    from kivy.logger import Logger
     from gh_io_status_grid import gh_io_status_grid
     from kivy.graphics import Color, Ellipse, Rectangle, RoundedRectangle
     import sys

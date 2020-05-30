@@ -17,25 +17,35 @@ LED_COL_RED_ON  = [1.00,0.0,0.0,1]
 LED_COL_YEL_OFF = [0.14,0.14,0.0,1]
 LED_COL_YEL_ON  = [1.0,1.0,0.0,1]
 
-class tagged_label(Label):
+LABEL_NORMAL_COL=[1.0,1.0,1.0,1]
+LABEL_HIGHLIGHT_COL=[1.0,1.0,0.0,1]
+
+#This is a label that can be bound to on_press
+class tagged_label(ButtonBehavior, Label):
     def __init__(self,**kwargs):
         self.tname=kwargs.pop('tname',None)
         self.pname=kwargs.pop('pname',None)
-        super(tagged_label, self).__init__(**kwargs)
+        Label.__init__(self,**kwargs)
+        ButtonBehavior.__init__(self)
+    
+        
 
 class gh_io_status_grid(BoxLayout):
     def __init__(self,**kwargs):
+        self.register_event_type('on_desc_click')
         self.orientation='vertical'
         BoxLayout.__init__(self)
         self._all_op_desc=kwargs.get('all_op_desc',None)
         self._controls=dict()
         self._statuslabel=dict()
+        self._desclabel=dict()
         fsize1='22sp'
                         
         #Create a TextInput control for each parameter
         for tname in self._all_op_desc: #for each thread name
             self._controls[tname]=dict()
             self._statuslabel[tname]=dict()
+            self._desclabel[tname]=dict()
             for pname in self._all_op_desc[tname]:  #for each output parameter                
                 lay=BoxLayout(orientation='horizontal')
                 ti0=Led(size_hint=(0.1,1),source='shapes/basic_disc.png',\
@@ -44,8 +54,9 @@ class gh_io_status_grid(BoxLayout):
                         ) #LED to pulse for activity
                 ti0.state='on'  #Initially show that no data has been received
                 ti1=tagged_label(size_hint=(1,1),font_size=fsize1,\
-                                 tname=tname,pname=pname)  #Description
-                ti1.bind(on_release=self.desc_click)
+                                 tname=tname,pname=pname,\
+                                 color=LABEL_NORMAL_COL)  #Description
+                ti1.bind(on_press=self.desc_click )
                 ti2=Label(size_hint=(0.25,1),markup=True,\
                           font_size='25sp',halign='right',\
                           valign='middle',color=[0.5,1,0,1])  #Data
@@ -54,6 +65,7 @@ class gh_io_status_grid(BoxLayout):
                           color=[0.9,0.9,0.9,1])  #units
                 self._controls[tname][pname]=ti2
                 self._statuslabel[tname][pname]=ti0
+                self._desclabel[tname][pname]=ti1
                 lay.add_widget(ti0)
                 lay.add_widget(ti1)
                 lay.add_widget(ti2)
@@ -62,7 +74,10 @@ class gh_io_status_grid(BoxLayout):
                 ti3.text=" "+str(self._all_op_desc[tname][pname]['punits'])
                 self.add_widget(lay)
         
-            
+        #Set the highlight to the first item
+         
+        self.desc_click(None)
+                    
     def process_data(self,data):
         #update the value
         self._controls[data['tname']][data['pname']].text=\
@@ -75,8 +90,21 @@ class gh_io_status_grid(BoxLayout):
         lbl.toggle_state()
         
     def desc_click(self,inst):
-        self._sel_tname=inst.tname
-        self._sel_pname=inst.pname
-        print("clicked")
-        print((self._sel_tname,self._sel_pname))
+        if inst is None:
+            self._sel_tname=list(self._all_op_desc)[0]
+            self._sel_pname=list(self._all_op_desc[self._sel_tname])[0]
+        else:
+            lbl=self._desclabel[self._sel_tname][self._sel_pname]
+            lbl.color=LABEL_NORMAL_COL
+            self._sel_tname=inst.tname
+            self._sel_pname=inst.pname
+        lbl=self._desclabel[self._sel_tname][self._sel_pname]
+        lbl.color=LABEL_HIGHLIGHT_COL
+        #print("clicked")
+        #print((self._sel_tname,self._sel_pname))
+        data=((self._sel_tname,self._sel_pname))
+        self.dispatch('on_desc_click',data)
         
+    #fires when the description is clicked
+    def on_desc_click(self,*args):
+        pass  
