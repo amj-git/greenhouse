@@ -279,6 +279,7 @@ if __name__ == "__main__":
         def refresh_graph(self,*args):
             db=self._db_manager.get_database(self._sel_tname,self._sel_pname)
             self.io_graph.set_database(db)
+            self.io_graph._redraw_all()
             
         #accepts (tname,pname)
         def set_db(self,p):
