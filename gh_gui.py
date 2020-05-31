@@ -169,7 +169,7 @@ if __name__ == "__main__":
         def __init__(self, **kwargs):
             super(IOGraphScreen, self).__init__(**kwargs)
             
-            self._xzoom=8  #default xzoom level
+            self._xzoom=10  #default xzoom level
             
             #ROOT STRUCTURE
             self.root_box=BoxLayout(orientation='horizontal')
