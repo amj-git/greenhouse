@@ -44,8 +44,6 @@ class gh_io_graph(kgraph.Graph):
         self._db=db
         if self._db is not None:
             self._meta_data=self._db.get_meta_data()        
-            self.xmax=gh_db_manager.datetime_to_timestamp(datetime.now())
-            self.xmin=self.xmax-3*60*60*1000
             self.set_y_ticks()
 
     def set_database(self,db):

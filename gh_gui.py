@@ -62,6 +62,8 @@ if __name__ == "__main__":
     from kivy.uix.anchorlayout import AnchorLayout
     from kivy.uix.textinput import TextInput
     from kivy.uix.widget import Widget
+    import gh_db_manager
+    from datetime import datetime, timedelta    
     from kivy.uix.screenmanager import ScreenManager, Screen
     from kivy.logger import Logger
     from gh_io_status_grid import gh_io_status_grid
@@ -69,6 +71,57 @@ if __name__ == "__main__":
     import sys
     import multiprocessing
     from time import sleep
+    
+    XLABELSTR='Span '
+    
+    #Millisecond quantities
+    M_SEC=1000
+    M_MINUTE=60*1000
+    M_HOUR=60*M_MINUTE
+    M_DAY=24*M_HOUR
+    M_WEEK=7*M_DAY
+    M_MONTH=30*M_DAY
+
+    #available spans
+    xzoomlevels=[   12*M_MONTH,\
+                    6*M_MONTH,\
+                    3*M_MONTH,\
+                    1*M_MONTH,\
+                    2*M_WEEK,\
+                    1*M_WEEK,\
+                    5*M_DAY,\
+                    2*M_DAY,\
+                    1*M_DAY,\
+                    12*M_HOUR,\
+                    6*M_HOUR,\
+                    3*M_HOUR,\
+                    1*M_HOUR,\
+                    30*M_MINUTE,\
+                    10*M_MINUTE,\
+                    5*M_MINUTE,\
+                    2*M_MINUTE,\
+                    1*M_MINUTE]   
+    
+    #corresponding major tick spacing
+    xtickspacing=[  1*M_MONTH,\
+                    1*M_MONTH,\
+                    1*M_MONTH,\
+                    4*M_WEEK,\
+                    2*M_DAY,\
+                    1*M_DAY,\
+                    1*M_DAY,\
+                    12*M_HOUR,\
+                    2*M_HOUR,\
+                    1*M_HOUR,\
+                    1*M_HOUR,\
+                    1*M_HOUR,\
+                    10*M_MINUTE,\
+                    5*M_MINUTE,\
+                    2*M_MINUTE,\
+                    1*M_MINUTE,\
+                    20*M_SEC,\
+                    10*M_SEC]
+        
     
     class IOStatusScreen(Screen):
         def __init__(self, **kwargs):
@@ -116,6 +169,8 @@ if __name__ == "__main__":
         def __init__(self, **kwargs):
             super(IOGraphScreen, self).__init__(**kwargs)
             
+            self._xzoom=8  #default xzoom level
+            
             #ROOT STRUCTURE
             self.root_box=BoxLayout(orientation='horizontal')
             self.add_widget(self.root_box)
@@ -142,13 +197,14 @@ if __name__ == "__main__":
             self.non_menu_root.add_widget(self.graph_title)
             self.io_graph=gh_io_graph.gh_io_graph(db=None,\
                                                   x_ticks_major=60*60*1000,\
-                                                  x_ticks_minor=6,\
+                                                  x_ticks_minor=0,\
                                                   padding=5,\
                                                   x_grid=True,\
                                                   y_grid=True,\
                                                   y_grid_label=True,\
-                                                  x_grid_label=True,\
-                                                  xlabel='Timestamp (ms)')
+                                                  x_grid_label=False)
+            self.b_gohome()
+            self.set_zoom()
             self.non_menu_root.add_widget(self.io_graph)
 
             #Navigation Buttons
@@ -163,10 +219,6 @@ if __name__ == "__main__":
             b_zoomout.bind(on_press=self.b_zoomout)
             navbuttons.add_widget(b_zoomout)
             
-            b_gohome=Button(text='Home')
-            b_gohome.bind(on_press=self.b_gohome)
-            navbuttons.add_widget(b_gohome)            
-            
             b_zoomin=Button(text='+')
             b_zoomin.bind(on_press=self.b_zoomin)
             navbuttons.add_widget(b_zoomin)
@@ -175,6 +227,21 @@ if __name__ == "__main__":
             b_right.bind(on_press=self.b_right)
             navbuttons.add_widget(b_right)
             
+            b_gohome=Button(text='>>')
+            b_gohome.bind(on_press=self.b_gohome)
+            navbuttons.add_widget(b_gohome)            
+            
+            
+        def set_zoom(self):
+            graph=self.io_graph
+            xcentre=(graph.xmax+graph.xmin)/2
+            hspan=xzoomlevels[self._xzoom]/2
+            graph.xmin=xcentre-hspan
+            graph.xmax=xcentre+hspan
+            graph.x_ticks_major=xtickspacing[self._xzoom]
+            graph.xlabel=XLABELSTR+self.get_span_string()
+            
+        
         def b_left(self,*args):
             graph=self.io_graph
             step=graph.x_ticks_major
@@ -188,14 +255,20 @@ if __name__ == "__main__":
             graph.xmax=graph.xmax+step
             
         def b_gohome(self,*args):
-            self.refresh_graph()
+            graph=self.io_graph
+            graph.xmax=gh_db_manager.datetime_to_timestamp(datetime.now())
+            span=xzoomlevels[self._xzoom]
+            graph.xmin=graph.xmax-span
             
-        def b_zoomin(self,*args):
-            pass
-             
         def b_zoomout(self,*args):
-            pass
-            
+            if self._xzoom>0:
+                self._xzoom=self._xzoom-1
+            self.set_zoom()
+             
+        def b_zoomin(self,*args):
+            if self._xzoom<(len(xzoomlevels)-1):
+                self._xzoom=self._xzoom+1
+            self.set_zoom()
             
         def quit_app(self,*args):
             App.get_running_app().stop()    
@@ -219,7 +292,14 @@ if __name__ == "__main__":
             self._db_manager=gio.get_db_manager()
             db=self._db_manager.get_database('Probe 1','Temp')
             self.io_graph.set_database(db)      
-        
+            
+        #gets a string describing the span
+        def get_span_string(self):
+            graph=self.io_graph
+            tstart=gh_db_manager.timestamp_to_datetime(graph.xmin)
+            tstop=gh_db_manager.timestamp_to_datetime(graph.xmax)
+            tdelta=tstop-tstart
+            return(str(tdelta))
     
     class RootWidget(ScreenManager):
         def __init__(self, **kwargs):
