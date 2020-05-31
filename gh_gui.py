@@ -49,6 +49,7 @@ from kivy.event import EventDispatcher
 from kivy.clock import Clock
 from process_control import pr_cont
 from gh_io_dispatcher import gh_io_dispatcher
+from kivy.uix.label import Label
 import gh_io_graph
 
 
@@ -58,6 +59,7 @@ if __name__ == "__main__":
     from kivy.core.window import Window
     from kivy.uix.button import Button
     from kivy.uix.boxlayout import BoxLayout
+    from kivy.uix.anchorlayout import AnchorLayout
     from kivy.uix.textinput import TextInput
     from kivy.uix.widget import Widget
     from kivy.uix.screenmanager import ScreenManager, Screen
@@ -99,6 +101,7 @@ if __name__ == "__main__":
             self.non_menu_root.add_widget(self.statusgrid) 
             gio.bind(on_io_data=self.process_io_data)
             self.statusgrid.bind(on_desc_click=self.desc_click)
+            self.statusgrid.desc_click(None) #force the db to be set
             
         def process_io_data(self,*args):
             self.statusgrid.process_data(args[1])
@@ -116,7 +119,7 @@ if __name__ == "__main__":
             #ROOT STRUCTURE
             self.root_box=BoxLayout(orientation='horizontal')
             self.add_widget(self.root_box)
-            self.non_menu_root=BoxLayout()
+            self.non_menu_root=BoxLayout(orientation='vertical')
             self.root_box.add_widget(self.non_menu_root)
             self.menu_root=BoxLayout(orientation='vertical',size_hint=(0.3,1))
             self.root_box.add_widget(self.menu_root)
@@ -134,6 +137,10 @@ if __name__ == "__main__":
             b2.bind(on_release=self.quit_app)
             self.menu_root.add_widget(b2)
             
+            #NON-MENU
+            self.graph_title=Label(color=[1,1,1,1],size=(400,25),size_hint=(1,None))
+            self.non_menu_root.add_widget(self.graph_title)
+            
         def quit_app(self,*args):
             App.get_running_app().stop()    
             
@@ -141,14 +148,15 @@ if __name__ == "__main__":
             self.parent.current='status_screen'
             
         def refresh_graph(self,*args):
-            db=self._db_manager.get_database('Probe 1','Temp')
+            db=self._db_manager.get_database(self._sel_tname,self._sel_pname)
             self.io_graph.set_database(db)
             
         #accepts (tname,pname)
-        def set_db(self,db):
-            (tname,pname)=db
-            db=self._db_manager.get_database(tname,pname)
-            self.io_graph.set_database(db)
+        def set_db(self,p):
+            (self._sel_tname,self._sel_pname)=p
+            self.refresh_graph()
+            t=self.graph_title
+            t.text=str(self._sel_tname)+"/"+str(self._sel_pname)
             
         def start_io(self,gio,io_desc):
             #GRAPH
@@ -157,7 +165,6 @@ if __name__ == "__main__":
             self.io_graph=gh_io_graph.gh_io_graph(db=db,\
                                                   x_ticks_major=60*60*1000,\
                                                   x_ticks_minor=6,\
-                                                  y_ticks_major=10,\
                                                   padding=5,\
                                                   x_grid=True,\
                                                   y_grid=True,\
@@ -174,11 +181,14 @@ if __name__ == "__main__":
             super(RootWidget, self).__init__(**kwargs)
             
             self.io_graph_screen=IOGraphScreen(name='graph_screen')
-            self.add_widget(self.io_graph_screen)
+            
                                  
             self.io_status_screen=IOStatusScreen(name='status_screen',\
                                                  graph_screen=self.io_graph_screen)
+            
+            #add in this order so status screen shows first
             self.add_widget(self.io_status_screen)
+            self.add_widget(self.io_graph_screen)
             
             
         def start_io(self):
@@ -194,14 +204,13 @@ if __name__ == "__main__":
                 Logger.exception("init_io: OPDESC? Query Timed Out (No response from gh_io process)")
                 sys.exit(1)
         
-            self.io_status_screen.start_io(self._gio,io_desc)
             self.io_graph_screen.start_io(self._gio,io_desc)
+            self.io_status_screen.start_io(self._gio,io_desc)
              
             #Start IO events running
             self._gio.start_events()
             
         #this is the callback that is triggered by the io_q events
-        #here it just prints the data
         def _process_io_data(self,*args):
             self.io_status_screen.process_data(args[1])
             #Logger.debug("gh_io_dispatcher:"+str(args[1]))
@@ -213,7 +222,7 @@ if __name__ == "__main__":
             App.get_running_app().stop()
             
             
-    class gh_db_dispatcher_test_app(App):
+    class gh_gui_app(App):
           
         def build(self):
             self._running=False
@@ -233,4 +242,4 @@ if __name__ == "__main__":
         multiprocessing.set_start_method('fork')
     pr_cont.set_proctitle('gh_main process') #allows process to be idenfified in htop
     pr_cont.set_name('kivy main') #allows process to be idenfified in htop
-    gh_db_dispatcher_test_app().run()
+    gh_gui_app().run()
