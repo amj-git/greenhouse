@@ -270,8 +270,13 @@ class param_db:
             rows=self._db.execute("SELECT * FROM raw_data WHERE timestamp>=? AND timestamp<=? ORDER BY timestamp ASC",\
                             (Tstart,Tstop))
             data=[]
+            #add a 0.1lx offset for light readings to prevent zeros screwing up log scale
+            if self._op_desc['ptype']=='light':
+                offset=0.1 #lx
+            else:
+                offset=0
             for row in rows:
-                data.append ((row[0],row[1]*self._val_uncomp_mult))
+                data.append ((row[0],row[1]*self._val_uncomp_mult+offset))
             return data 
 
 '''gh_db_manager----------------------------------------------
