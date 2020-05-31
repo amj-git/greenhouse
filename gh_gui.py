@@ -140,6 +140,62 @@ if __name__ == "__main__":
             #NON-MENU
             self.graph_title=Label(color=[1,1,1,1],size=(400,25),size_hint=(1,None))
             self.non_menu_root.add_widget(self.graph_title)
+            self.io_graph=gh_io_graph.gh_io_graph(db=None,\
+                                                  x_ticks_major=60*60*1000,\
+                                                  x_ticks_minor=6,\
+                                                  padding=5,\
+                                                  x_grid=True,\
+                                                  y_grid=True,\
+                                                  y_grid_label=True,\
+                                                  x_grid_label=True,\
+                                                  xlabel='Timestamp (ms)')
+            self.non_menu_root.add_widget(self.io_graph)
+
+            #Navigation Buttons
+            navbuttons=BoxLayout(orientation='horizontal',size_hint=(1,0.15))
+            self.non_menu_root.add_widget(navbuttons)
+            
+            b_left=Button(text='<',)
+            b_left.bind(on_press=self.b_left)
+            navbuttons.add_widget(b_left)
+
+            b_zoomout=Button(text='-')
+            b_zoomout.bind(on_press=self.b_zoomout)
+            navbuttons.add_widget(b_zoomout)
+            
+            b_gohome=Button(text='Home')
+            b_gohome.bind(on_press=self.b_gohome)
+            navbuttons.add_widget(b_gohome)            
+            
+            b_zoomin=Button(text='+')
+            b_zoomin.bind(on_press=self.b_zoomin)
+            navbuttons.add_widget(b_zoomin)
+                       
+            b_right=Button(text='>')
+            b_right.bind(on_press=self.b_right)
+            navbuttons.add_widget(b_right)
+            
+        def b_left(self,*args):
+            graph=self.io_graph
+            step=graph.x_ticks_major
+            graph.xmin=graph.xmin-step
+            graph.xmax=graph.xmax-step
+                        
+        def b_right(self,*args):
+            graph=self.io_graph
+            step=graph.x_ticks_major
+            graph.xmin=graph.xmin+step
+            graph.xmax=graph.xmax+step
+            
+        def b_gohome(self,*args):
+            self.refresh_graph()
+            
+        def b_zoomin(self,*args):
+            pass
+             
+        def b_zoomout(self,*args):
+            pass
+            
             
         def quit_app(self,*args):
             App.get_running_app().stop()    
@@ -162,18 +218,7 @@ if __name__ == "__main__":
             #GRAPH
             self._db_manager=gio.get_db_manager()
             db=self._db_manager.get_database('Probe 1','Temp')
-            self.io_graph=gh_io_graph.gh_io_graph(db=db,\
-                                                  x_ticks_major=60*60*1000,\
-                                                  x_ticks_minor=6,\
-                                                  padding=5,\
-                                                  x_grid=True,\
-                                                  y_grid=True,\
-                                                  y_grid_label=True,\
-                                                  x_grid_label=True,\
-                                                  xlabel='Timestamp (ms)')
-            self.non_menu_root.add_widget(self.io_graph)
-        
-        
+            self.io_graph.set_database(db)      
         
     
     class RootWidget(ScreenManager):

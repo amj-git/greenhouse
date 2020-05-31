@@ -18,7 +18,8 @@ class db_raw_line(kgraph.LinePlot):
         super(db_raw_line, self).__init__(**kwargs)        
         
     def draw(self,*args):
-        self.points=self._db.get_raw_line(self.params['xmin'],self.params['xmax'])        
+        if self._db is not None:
+            self.points=self._db.get_raw_line(self.params['xmin'],self.params['xmax'])        
         super(db_raw_line,self).draw(*args)
 
     def set_database(self,db):
@@ -41,10 +42,11 @@ class gh_io_graph(kgraph.Graph):
         
     def set_db_params(self,db):
         self._db=db
-        self._meta_data=self._db.get_meta_data()        
-        self.xmax=gh_db_manager.datetime_to_timestamp(datetime.now())
-        self.xmin=self.xmax-3*60*60*1000
-        self.set_y_ticks()
+        if self._db is not None:
+            self._meta_data=self._db.get_meta_data()        
+            self.xmax=gh_db_manager.datetime_to_timestamp(datetime.now())
+            self.xmin=self.xmax-3*60*60*1000
+            self.set_y_ticks()
 
     def set_database(self,db):
         self.set_db_params(db)
