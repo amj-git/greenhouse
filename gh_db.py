@@ -92,7 +92,7 @@ class gh_db:
         
     def start_events(self):
         self._gh_mon.start()  #start receiving thread
-
+    
     def send_io_command(self,cmd,data):
         ctrl_data=dict()
         ctrl_data['command']=cmd

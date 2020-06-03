@@ -169,7 +169,7 @@ if __name__ == "__main__":
         def __init__(self, **kwargs):
             super(IOGraphScreen, self).__init__(**kwargs)
             
-            self._xzoom=10  #default xzoom level
+            self._xzoom=13  #default xzoom level
             
             #ROOT STRUCTURE
             self.root_box=BoxLayout(orientation='horizontal')
@@ -253,7 +253,7 @@ if __name__ == "__main__":
             step=graph.x_ticks_major
             graph.xmin=graph.xmin+step
             graph.xmax=graph.xmax+step
-            
+                        
         def b_gohome(self,*args):
             graph=self.io_graph
             graph.xmax=gh_db_manager.datetime_to_timestamp(datetime.now())
