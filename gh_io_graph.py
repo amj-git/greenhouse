@@ -160,8 +160,8 @@ class gh_io_graph(kgraph.Graph):
         self.set_db_params(kwargs.pop('db',None))
         super(gh_io_graph, self).__init__(**kwargs)
         
-        self._raw_line=db_raw_line(color=[1, 1, 0, 0.5],db=self._db)
-        self._comp_line=db_comp_line(color=[1, 0, 0, 1],rect_color=[1, 0, 0, 0.55],db=self._db)
+        self._raw_line=db_raw_line(color=[1, 1, 0, 1],db=self._db)
+        self._comp_line=db_comp_line(color=[1, 1, 1, 1],rect_color=[1, 1, 0, 0.55],db=self._db)
         self.add_plot(self._comp_line)
         self.add_plot(self._raw_line)
         
