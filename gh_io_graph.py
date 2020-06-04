@@ -17,7 +17,6 @@ from kivy.properties import NumericProperty, BooleanProperty,\
     DictProperty, AliasProperty
 from kivy.graphics import Mesh, Color, Rectangle, Point
 import sys,traceback
-from win32con import HSHELL_GETMINRECT
 
 MAX_RAW_POINTS=16000  #don't try to draw raw points for more than this much data
 
