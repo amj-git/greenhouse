@@ -297,6 +297,9 @@ class param_db:
                               row[2]*self._val_uncomp_mult+offset,\
                               row[3]*self._val_uncomp_mult+offset))
             return data 
+        
+    def get_Tchunk(self):
+        return self._Tchunk
 
 '''gh_db_manager----------------------------------------------
 Database Manager
