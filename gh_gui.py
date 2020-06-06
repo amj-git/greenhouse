@@ -58,6 +58,7 @@ if __name__ == "__main__":
     from kivy.app import App
     from kivy.core.window import Window
     from kivy.uix.button import Button
+    from kivy.uix.togglebutton import ToggleButton
     from kivy.uix.boxlayout import BoxLayout
     from kivy.uix.anchorlayout import AnchorLayout
     from kivy.uix.textinput import TextInput
@@ -180,17 +181,19 @@ if __name__ == "__main__":
             self.root_box.add_widget(self.menu_root)
                                          
             #MENU
-            b0=Button(text='Refresh',)
-            b0.bind(on_release=self.refresh_graph)
-            self.menu_root.add_widget(b0)
-            
             b1=Button(text='Status...',)
             b1.bind(on_release=self.page_jump1)
             self.menu_root.add_widget(b1)
             
-            b2=Button(text='Exit',)
-            b2.bind(on_release=self.quit_app)
+            b2=ToggleButton(text='Raw',state='down')
+            b2.bind(on_release=self.refresh_graph)
             self.menu_root.add_widget(b2)
+            self._raw_data_button=b2
+            
+            b3=ToggleButton(text='Compressed',state='down')
+            b3.bind(on_release=self.refresh_graph)
+            self.menu_root.add_widget(b3)
+            self._comp_data_button=b3
             
             #NON-MENU
             self.graph_title=Label(color=[1,1,1,1],size=(400,25),size_hint=(1,None))
@@ -279,6 +282,8 @@ if __name__ == "__main__":
         def refresh_graph(self,*args):
             db=self._db_manager.get_database(self._sel_tname,self._sel_pname)
             self.io_graph.set_database(db)
+            self.io_graph.set_visibility(self._raw_data_button.state=='down',\
+                                         self._comp_data_button.state=='down')
             self.io_graph._redraw_all()
             
         #accepts (tname,pname)

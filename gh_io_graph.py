@@ -28,6 +28,8 @@ MAX_RAW_POINTS=16000  #don't try to draw raw points for more than this much data
     Need to use comp_data to deal with large timespans
 '''
 class db_raw_line(kgraph.PointPlot):
+    visible = BooleanProperty(True)
+    
     def __init__(self,**kwargs):
         self.set_database(kwargs.pop('db',None))
         super(db_raw_line, self).__init__(**kwargs)
@@ -37,8 +39,10 @@ class db_raw_line(kgraph.PointPlot):
         self.unbind(points=self.ask_draw)      
         
     def draw(self,*args):
-        if self._db is not None:
+        if self._db is not None and self.visible:
             self.points=self._db.get_raw_line(self.params['xmin'],self.params['xmax'])
+        else:
+            self.points=[]
         
         #if it's too long, just display the centre
         k=len(self.points)    
@@ -56,11 +60,12 @@ class db_raw_line(kgraph.PointPlot):
 '''
 class db_comp_line(kgraph.Plot):
     rect_color = ListProperty([1, 1, 1, 1])
+    visible = BooleanProperty(True)
     
     def __init__(self,**kwargs):
         self.set_database(kwargs.pop('db',None))
         super(db_comp_line, self).__init__(**kwargs)
-        self.unbind(points=self.ask_draw)      
+        self.unbind(points=self.ask_draw) 
 
     def create_drawings(self):
         self._grc = RenderContext(
@@ -76,22 +81,18 @@ class db_comp_line(kgraph.Plot):
         return [self._grc]
 
     def draw(self, *args):
-        if self._db is not None:
+        #get data from the db
+        if (self._db is not None) and self.visible:
             comp_data=self._db.get_comp_line(self.params['xmin'],self.params['xmax'])
-            avg_data=[]
-            min_data=[]
-            max_data=[]
-            for d in comp_data:
-                avg_data.append((d[0],d[1]))
-                min_data.append((d[0],d[2]))
-                max_data.append((d[0],d[3]))       
-        
+        else:
+            comp_data=[]
+           
         super(db_comp_line, self).draw(*args) #this clears the graph
         
+        #functions to convert xy to pixels
         x_px = self.x_px()
         y_px = self.y_px()
-        
-        
+             
         #Initialize a stepped line for the average
         mesh_avg=self._mesh1
         vert_avg=mesh_avg.vertices
@@ -123,7 +124,7 @@ class db_comp_line(kgraph.Plot):
             y1t=y_px(ymin)
             y2t=y_px(ymax)
             
-            #Add rectangles for min/max extents
+            #Add rectangles for min/max extents (built from two OpenGL triangles)
             idx = k * 24
             # first triangle
             vert_rect[idx] = x1t
@@ -160,8 +161,8 @@ class gh_io_graph(kgraph.Graph):
         self.set_db_params(kwargs.pop('db',None))
         super(gh_io_graph, self).__init__(**kwargs)
         
-        self._raw_line=db_raw_line(color=[1, 1, 0, 1],db=self._db)
-        self._comp_line=db_comp_line(color=[1, 1, 1, 1],rect_color=[1, 1, 0, 0.55],db=self._db)
+        self._raw_line=db_raw_line(color=[0, 1, 1, 1],db=self._db)
+        self._comp_line=db_comp_line(color=[1, 1, 1, 1],rect_color=[1, 1, 0, 1],db=self._db)
         self.add_plot(self._comp_line)
         self.add_plot(self._raw_line)
         
@@ -176,6 +177,9 @@ class gh_io_graph(kgraph.Graph):
         self._raw_line.set_database(db)
         self._comp_line.set_database(db)
         
+    def set_visibility(self,showraw,showcomp):
+        self._raw_line.visible=showraw
+        self._comp_line.visible=showcomp
         
     def set_y_ticks(self):      
         self.ylabel=self._meta_data['pdesc']+' ('+self._meta_data['punits']+')'        
