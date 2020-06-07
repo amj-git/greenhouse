@@ -135,7 +135,7 @@ class param_db:
             for key in self._op_desc:
                 data.append( (key,self._op_desc[key]) )
             data.append( ('val_comp_mult','{:e}'.format(self._val_comp_mult)) )
-            data.append( ('Tchunk','{d}'.format(DEFAULT_TCHUNK)) )
+            data.append( ('Tchunk','%d' % DEFAULT_TCHUNK ) )
             self._db.executemany('INSERT INTO meta_data VALUES (?,?)',data)
             self.commit()
             self._read_meta_data() #this ensures self._meta_data gets set.

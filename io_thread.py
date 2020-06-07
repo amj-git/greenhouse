@@ -76,6 +76,7 @@ from io_w1 import sw_5v_pin, w1_read_temp
 from io_bh1750 import io_bh1750, BH1750_DEFAULT
 import io_dht22
 from process_control import pr_cont
+import io_moist
 
 #START class IO_Thread------------------------------------------------
 class IO_Thread(Thread):
@@ -356,6 +357,54 @@ class IO_Thread_DHT22(IO_Thread):
         IO_Thread._shutdown(self)
 #END class IO_Thread_DHT22------------------------------------------------    
 
+#BEGIN class IO_Thread_Moist------------------------------------------------
+'''Moisture Sensors
+'''
+class IO_Thread_Moist(IO_Thread):
+    def __init__(self,**kwargs):
+        self._ref_pin=kwargs.get('ref_pin',False)
+        self._det_pins=kwargs.get('det_pins',False)
+        IO_Thread.__init__(self,**kwargs)
+    
+    #get the parameter name associated with the kth sensor
+    #k starts at 0
+    def _get_pname(self,k):
+        return '%d' % (k+1)
+    
+    def _set_op_desc(self):
+        for k,det_pin in enumerate(self._det_pins):
+            print ('IO_Thread_Moist._set_op_desc: k=',k,'det_pin=',det_pin)
+            pname=self._get_pname(k)
+            self._op_desc[pname]={
+                  'pdesc':'Moisture',
+                  'ptype':'moist',
+                  'pdatatype':'float',
+                  'pmin':0,
+                  'pmax':255,
+                  'punits':'Decimal' }
+                
+    def _startup(self):
+        IO_Thread._startup(self)
+        if not self._sim_hw:
+            self._moist_obj=io_moist.sensor(self._h_gpio, self._ref_pin, self._det_pins)
+        
+    def _heartbeat(self,triggertime):
+        if self._sim_hw:
+            IO_Thread._heartbeat(self,triggertime)
+        else:
+            moist_data=self._moist_obj.read()
+            
+            for k,m in enumerate(moist_data): 
+                pname=self._get_pname(k)
+                self._add_to_out_q(pname,m,triggertime)
+        
+    def _shutdown(self):
+        if not self._sim_hw:
+            del self._moist_obj
+        IO_Thread._shutdown(self)
+#END class IO_Thread_Moist------------------------------------------------    
+
+
 #BEGIN class IO_Thread_ExampleController------------------------------------------------
 '''Demo of how to read and react to data from other threads
 This example just repeats the last data from a given thread and parameter
@@ -401,6 +450,8 @@ class IO_Thread_ExampleController(IO_Thread):
     def _shutdown(self):
         IO_Thread._shutdown(self)
 #END class IO_Thread_ExampleController------------------------------------------------    
+
+
 
       
 #START class IO_Thread_Manager------------------------------------------------      
