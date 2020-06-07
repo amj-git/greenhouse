@@ -373,7 +373,7 @@ class IO_Thread_Moist(IO_Thread):
     
     def _set_op_desc(self):
         for k,det_pin in enumerate(self._det_pins):
-            print ('IO_Thread_Moist._set_op_desc: k=',k,'det_pin=',det_pin)
+            #print ('IO_Thread_Moist._set_op_desc: k=',k,'det_pin=',det_pin)
             pname=self._get_pname(k)
             self._op_desc[pname]={
                   'pdesc':'Moisture',

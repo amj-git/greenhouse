@@ -91,7 +91,7 @@ def gh_io_main(io_q,io_ctrl):
                          out_q=local_io_q, \
                          sim_hw=sim_mode, \
                          period=10, \
-                         ref_pin=5, \
+                         ref_pin=12, \
                          det_pins=[10,9,11] )
     io_manager.add_thread(io_thread8)    
     
