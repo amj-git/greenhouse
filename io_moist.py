@@ -18,7 +18,7 @@ class sensor:
     '''
     
     def __init__(self, h_gpio, gpio_ref, gpio_det):
-        self._h_gpio = pi
+        self._h_gpio = h_gpio
         self._gpio_ref = gpio_ref
         self._gpio_det = gpio_det
       
