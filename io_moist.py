@@ -42,7 +42,7 @@ class sensor:
         for det_pin in self._gpio_det:
             for pwm_val in range(0,255,16):
                 self._set_ref(pwm_val)
-                sleep(0.25)
+                sleep(1/16)
             self._set_ref(128)
             data.append(128+det_pin)
         return data
