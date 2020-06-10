@@ -51,23 +51,42 @@ class sensor:
             
     def _set_ref(self,val):
         '''Accepts values of 0 to 100
+        Scales by a factor of 1.05 to avoid a dead spot above 95%
         '''
         if self._hw_pwm:
             self._h_gpio.hardware_PWM(self._gpio_ref,\
                                       self._pwm_freq,\
-                                      round(val*10000))
+                                      round(val*10000*1.05))
         else:
             self._h_gpio.set_PWM_dutycycle(self._gpio_ref,val)
         
     def read(self):
         data=[]
         for det_pin in self._gpio_det:
-            for pwm_val in range(0,100,5):
-                self._set_ref(pwm_val)
-                sleep(1/20)
-            self._set_ref(50)
-            data.append(50+det_pin)
+            val=self._read_one(det_pin)
+            data.append(val)
         return data
+    
+    def read_one(self,det_pin):
+        '''
+        Finds the toggle point for the sensor attached to the pin
+        specified by det_pin
+        The comparator output is LOW when the code is TOO LOW
+        '''
+        pwm_val=50
+        pwm_step=25
+        loop_count=0
+        while(pwm_step>=1):
+            self._set_ref(pwm_val)
+            sleep(0.02)
+            if (self._h_gpio.read(det_pin)==0):
+                pwm_val=pwm_val+pwm_step
+            else:
+                pwm_val=pwm_val-pwm_step
+            pwm_step=pwm_step*0.5
+            
+        return pwm_val
+        
     
 #Test code
 if __name__ == "__main__":
