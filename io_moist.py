@@ -109,6 +109,8 @@ if __name__ == "__main__":
     
     s = sensor(pi, 12, [16,20,21])
     
+    print(s.read())
+    
     s._set_ref(val)
         
     pi.stop()
