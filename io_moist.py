@@ -67,7 +67,7 @@ class sensor:
             data.append(val)
         return data
     
-    def read_one(self,det_pin):
+    def _read_one(self,det_pin):
         '''
         Finds the toggle point for the sensor attached to the pin
         specified by det_pin
