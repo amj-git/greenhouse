@@ -78,7 +78,7 @@ if __name__ == "__main__":
         print("pigpio not loaded")
         exit()
         
-    if len(sys.argv==2):
+    if len(sys.argv)==2:
         val=sys.argv[1]
     else:
         print("Usage: io_moist.py <value>")
