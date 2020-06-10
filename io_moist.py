@@ -79,7 +79,7 @@ if __name__ == "__main__":
         exit()
         
     if len(sys.argv)==2:
-        val=sys.argv[1]
+        val=float(sys.argv[1])
     else:
         print("Usage: io_moist.py <value>")
         print("Sets the reference PWM output to the specified value")
