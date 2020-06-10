@@ -85,14 +85,14 @@ def gh_io_main(io_q,io_ctrl):
     io_manager.add_thread(io_thread7)
     
     #Moisture sensors on pin 10,9,11
-    #ref is on pin 5
+    #ref is on pin 12
     #All handled by the same thread as they share ref
     io_thread8=IO_Thread_Moist(threadname="Moisture", \
                          out_q=local_io_q, \
                          sim_hw=sim_mode, \
                          period=10, \
                          ref_pin=12, \
-                         det_pins=[10,9,11] )
+                         det_pins=[16,20,21] )
     io_manager.add_thread(io_thread8)    
     
     #demo of a thread that uses data from another thread

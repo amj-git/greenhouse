@@ -68,3 +68,29 @@ class sensor:
             self._set_ref(50)
             data.append(50+det_pin)
         return data
+    
+#Test code
+if __name__ == "__main__":
+
+    import sys
+    
+    if not _pigpio_ok:
+        print("pigpio not loaded")
+        exit()
+        
+    if len(sys.argv==2):
+        val=sys.argv[1]
+    else:
+        print("Usage: io_moist.py <value>")
+        print("Sets the reference PWM output to the specified value")
+        val=50
+    
+    
+    pi = pigpio.pi()
+    
+    s = sensor(pi, 12, [16,20,21])
+    
+    s._set_ref(val)
+        
+    pi.stop()
+
