@@ -79,9 +79,9 @@ class sensor:
         pwm_val=50
         pwm_step=25
         loop_count=0
-        while(pwm_step>=1):
+        while(pwm_step>=0.3):
             self._set_ref(pwm_val)
-            sleep(0.1)
+            sleep(0.02)
             if (self._h_gpio.read(det_pin)==0):
                 pwm_val=pwm_val+pwm_step
             else:
