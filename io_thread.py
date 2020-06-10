@@ -380,8 +380,8 @@ class IO_Thread_Moist(IO_Thread):
                   'ptype':'moist',
                   'pdatatype':'float',
                   'pmin':0,
-                  'pmax':255,
-                  'punits':'Decimal' }
+                  'pmax':100,
+                  'punits':'%' }
                 
     def _startup(self):
         IO_Thread._startup(self)

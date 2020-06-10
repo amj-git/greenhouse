@@ -191,7 +191,9 @@ class gh_io_graph(kgraph.Graph):
         if ptype=='temp':
             self.y_ticks_major=10.0
         elif ptype=='humid':
-            self.y_ticks_major=10.0            
+            self.y_ticks_major=10.0
+        elif ptype=='moist':
+            self.y_ticks_major=10.0               
         elif ptype=='light':
             self.y_ticks_major=1  #tick every decade
             self.y_ticks_minor=10
