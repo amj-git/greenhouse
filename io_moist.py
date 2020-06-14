@@ -51,10 +51,10 @@ class sensor:
             
     def _set_ref(self,val):
         '''Accepts values of 0 to 100
-        Scales by a factor of 1.05 to avoid a dead spot above 95% for fast PWM
+        Scales by a factor of 0.95 to avoid a dead spot above 95% for fast PWM
         '''
         if self._hw_pwm:
-            val_scaled=val*1.05
+            val_scaled=val*0.95
             if(val_scaled>100):
                 val_scaled=100       
             self._h_gpio.hardware_PWM(self._gpio_ref,\
