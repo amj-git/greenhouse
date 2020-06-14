@@ -54,9 +54,13 @@ class sensor:
         Scales by a factor of 0.95 to avoid a dead spot above 95% for fast PWM
         '''
         if self._hw_pwm:
-            val_scaled=val*0.95
+            PWM_OFFSET=7
+            PWM_SLOPE=(95-PWM_OFFSET)/100
+            val_scaled=PWM_OFFSET+val*PWM_SLOPE
             if(val_scaled>100):
                 val_scaled=100       
+            if(val_scaled<0):
+                val_scaled=0
             self._h_gpio.hardware_PWM(self._gpio_ref,\
                                       self._pwm_freq,\
                                       round(val_scaled*10000))
@@ -79,7 +83,7 @@ class sensor:
         pwm_val=50
         pwm_step=25
         loop_count=0
-        while(pwm_step>=0.3):
+        while(pwm_step>=0.15):
             self._set_ref(pwm_val)
             sleep(0.02)
             if (self._h_gpio.read(det_pin)==0):
