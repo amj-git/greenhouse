@@ -12,6 +12,7 @@ from io_thread import IO_Thread, IO_Thread_Manager, IO_Thread_ExampleIO, \
                         IO_Thread_DHT22, \
                         IO_Thread_ExampleController, \
                         IO_Thread_Moist
+from io_sprinkler import IO_Thread_Sprinkler
 from time import sleep
 from datetime import datetime, timedelta
 import queue
@@ -34,7 +35,7 @@ def gh_io_main(io_q,io_ctrl):
     
     io_manager=IO_Thread_Manager(sim_hw=sim_mode)  #sim_hw for the Manager determinest whether to start pigpio
     
-    
+    '''    
     #Create one thread from the base class
     io_thread1=IO_Thread(threadname="Sim Thread 1", \
                          out_q=local_io_q, \
@@ -48,7 +49,8 @@ def gh_io_main(io_q,io_ctrl):
                          sim_hw=True, \
                          period=0.618)
     io_manager.add_thread(io_thread2)
-        
+    '''
+     
     io_thread3=IO_Thread_DS18B20(threadname="Probe 1", \
                          out_q=local_io_q, \
                          sim_hw=sim_mode, \
@@ -92,23 +94,35 @@ def gh_io_main(io_q,io_ctrl):
                          sim_hw=sim_mode, \
                          period=10, \
                          ref_pin=12, \
-                         det_pins=[16,20,21] )
+                         det_pins=[16] )  #just sensor 1
+                         #det_pins=[16,20,21] ) #all moisture sensors
     io_manager.add_thread(io_thread8)    
+
+    #Sprinkler on pin 13,19,26
+    #All handled by the same thread
+    io_thread_sprink=IO_Thread_Sprinkler(threadname="Sprinkler", \
+                         out_q=local_io_q, \
+                         sim_hw=sim_mode, \
+                         period=5, \
+                         valve_pins=[13,19,26], \
+                         valve_names=['hose','sprink1','sprink2'] )
+    io_manager.add_thread(io_thread_sprink) 
     
+    '''
     #demo of a thread that uses data from another thread
     #this example simply repeats the temperature from DHT1
-    io_thread8=IO_Thread_ExampleController(threadname="Sim Ctrl 1", \
+    io_thread9=IO_Thread_ExampleController(threadname="Sim Ctrl 1", \
                          out_q=local_io_q, \
                          sim_hw=sim_mode, \
                          period=3, \
                          source_tname='DHT1', \
                          source_pname='Temp' )
-    io_manager.add_thread(io_thread8)
-    
+    io_manager.add_thread(io_thread9)
+    ''' 
+
+        
     all_op_desc=io_manager.get_all_op_descriptions()
            
-    #io_manager.start_threads()  #moved to be triggered by START command
-    #iob=io_manager.get_iob()  #get the IO buffer
     iob=None
        
     pr_cont.set_proctitle('gh_io process') #allows process to be idenfified in htop
@@ -133,6 +147,9 @@ def gh_io_main(io_q,io_ctrl):
             if(cmd=='START'):
                 io_manager.start_threads()
                 iob=io_manager.get_iob()  #get the IO buffer
+            if(cmd[:6]=='SPRINK'):
+                io_thread_sprink.command(cmd,data)
+                
         try:
             op_data=local_io_q.get(timeout=0.1) #Block here max 100ms
         except queue.Empty:
@@ -162,7 +179,7 @@ if __name__ == "__main__":
         
         local_io_q=queue.Queue(20)  #allow max of 20 items
         
-        io_manager=IO_Thread_Manager(sim_hw=sim_mode)  #sim_hw for the Manager determinest whether to start pigpio
+        io_manager=IO_Thread_Manager(sim_hw=sim_mode)  #sim_hw for the Manager determines whether to start pigpio
         
         
         #Create one thread from the base class

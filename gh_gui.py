@@ -124,6 +124,70 @@ if __name__ == "__main__":
                     10*M_SEC]
         
     
+    class SprinklerScreen(Screen):
+        def __init__(self, **kwargs):
+            super(SprinklerScreen, self).__init__(**kwargs)
+            
+            self.hose_state=0
+            self.sprink1_state=0
+            self.sprink2_state=0
+            self.state_names=['AUTO','OFF','ON']
+            
+            #ROOT STRUCTURE
+            self.root_box=BoxLayout(orientation='horizontal')
+            self.add_widget(self.root_box)
+            self.non_menu_root=BoxLayout()
+            self.root_box.add_widget(self.non_menu_root)
+            self.menu_root=BoxLayout(orientation='vertical',size_hint=(0.3,1))
+            self.root_box.add_widget(self.menu_root)
+                                         
+            #MENU
+            self.b1=Button(text='HOSE',)
+            self.b1.bind(on_release=self.hoseclick)
+            self.menu_root.add_widget(self.b1)
+
+            self.b2=Button(text='SPRINKLER 1',)
+            self.b2.bind(on_release=self.s1click)
+            self.menu_root.add_widget(self.b2)
+
+            self.b3=Button(text='SPRINKLER 2',)
+            self.b3.bind(on_release=self.s2click)
+            self.menu_root.add_widget(self.b3)
+            
+            b99=Button(text='Back',)
+            b99.bind(on_release=self.page_jump1)
+            self.menu_root.add_widget(b99)
+            
+        def set_gio(self,gio):
+            self._gio=gio    
+        
+        def page_jump1(self,*args):
+            self.parent.current='status_screen'
+            
+        def cycle_item(self,x,max):
+            x=x+1
+            if x>max:
+                x=0
+            return x               
+                       
+        def hoseclick(self,*args):
+            self.hose_state=self.cycle_item(self.hose_state,2)
+            self.b1.text='HOSE '+self.state_names[self.hose_state]
+            self._gio.send_io_command('SPRINK:MODE','0,'+self.state_names[self.hose_state])
+                    
+        def s1click(self,*args):
+            self.sprink1_state=self.cycle_item(self.sprink1_state,2)
+            self.b2.text='SPRINKLER 1 '+self.state_names[self.sprink1_state]
+            self._gio.send_io_command('SPRINK:MODE','1,'+self.state_names[self.sprink1_state])
+                    
+        def s2click(self,*args):
+            self.sprink2_state=self.cycle_item(self.sprink2_state,2)
+            self.b3.text='SPRINKLER 2 '+self.state_names[self.sprink2_state]
+            self._gio.send_io_command('SPRINK:MODE','2,'+self.state_names[self.sprink2_state])
+            
+            
+
+    
     class IOStatusScreen(Screen):
         def __init__(self, **kwargs):
             self._graph_screen=kwargs.pop('graph_screen',None)
@@ -141,6 +205,11 @@ if __name__ == "__main__":
             b1=Button(text='Graph...',)
             b1.bind(on_release=self.page_jump1)
             self.menu_root.add_widget(b1)
+            
+            #MENU
+            b12=Button(text='Sprinkler...',)
+            b12.bind(on_release=self.page_jump2)
+            self.menu_root.add_widget(b12)
             
             b2=Button(text='Exit',)
             b2.bind(on_release=self.quit_app)
@@ -162,6 +231,9 @@ if __name__ == "__main__":
             
         def page_jump1(self,*args):
             self.parent.current='graph_screen'
+            
+        def page_jump2(self,*args):
+            self.parent.current='sprinkler_screen'        
             
         def desc_click(self,*args):
             self._graph_screen.set_db(args[1])
@@ -317,9 +389,12 @@ if __name__ == "__main__":
             self.io_status_screen=IOStatusScreen(name='status_screen',\
                                                  graph_screen=self.io_graph_screen)
             
+            self.io_sprinkler_screen=SprinklerScreen(name='sprinkler_screen')
+            
             #add in this order so status screen shows first
             self.add_widget(self.io_status_screen)
             self.add_widget(self.io_graph_screen)
+            self.add_widget(self.io_sprinkler_screen)
             
             
         def start_io(self):
@@ -337,6 +412,7 @@ if __name__ == "__main__":
         
             self.io_graph_screen.start_io(self._gio,io_desc)
             self.io_status_screen.start_io(self._gio,io_desc)
+            self.io_sprinkler_screen.set_gio(self._gio)
              
             #Start IO events running
             self._gio.start_events()
