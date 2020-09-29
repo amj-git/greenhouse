@@ -72,6 +72,7 @@ if __name__ == "__main__":
     import sys
     import multiprocessing
     from time import sleep
+    from gh_webserver import gh_webserver
     
     XLABELSTR='Span '
     
@@ -417,6 +418,10 @@ if __name__ == "__main__":
             #Start IO events running
             self._gio.start_events()
             
+        def start_webserver(self):
+            self.webserver=gh_webserver()
+            self.webserver.start()    
+        
         #this is the callback that is triggered by the io_q events
         def _process_io_data(self,*args):
             self.io_status_screen.process_data(args[1])
@@ -438,6 +443,7 @@ if __name__ == "__main__":
     
         def on_start(self):        
             self._rw.start_io()
+            self._rw.start_webserver()
             self._running=True
         
         def on_stop(self):        
