@@ -14,7 +14,7 @@ class IO_Thread_Sprinkler(IO_Thread):
         self._valve_pins=kwargs.get('valve_pins',False)
         self._valve_names=kwargs.get('valve_names',False)
         self._schedule=[]
-        self._valve_mode=['AUTO']*len(self._valve_pins)
+        self._valve_mode=['OFF']*len(self._valve_pins)
         self._set_default_schedule()
         self._valve_states=[0]*len(self._valve_pins)
         IO_Thread.__init__(self,**kwargs)
