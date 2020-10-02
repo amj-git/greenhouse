@@ -1,6 +1,6 @@
 #uses port 5000 to avoid needing sudo
 
-from flask import Flask
+from flask import Flask, render_template
 from threading import Thread
 
 import time
@@ -8,8 +8,9 @@ import time
 class gh_webserver(Thread):
     
     
-    def __init__(self):
+    def __init__(self,statusgrid):
         Thread.__init__(self)
+        self.statusgrid=statusgrid
         self.daemon=True
         self.__running=True
         self.app=Flask(__name__)
@@ -25,11 +26,13 @@ class gh_webserver(Thread):
     def run(self):
         app=self.app
         
+        #----------------------
         @app.route('/')
         def index():
-            return "Greenhouse web server running."
+            data=self.statusgrid.get_table_data()
+            return render_template('status.html',data=data)
         
-        
+        #----------------------
         if __name__ == '__main__':
             self.app.run(
                 host='0.0.0.0', port=5000, debug=True, use_debugger=False,
@@ -40,7 +43,7 @@ class gh_webserver(Thread):
             self.app.run(
                 host='0.0.0.0', port=5000, debug=True, use_debugger=True,
                 use_reloader=False)
-        
+        #----------------------
 
 
 

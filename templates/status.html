@@ -1,0 +1,19 @@
+<!doctype html>
+
+  <title>Greenhouse Status</title>
+
+  <link rel=stylesheet type=text/css href="{{ url_for('static', filename='style.css') }}">
+
+  <h1>Greenhouse Status</h1>
+
+  <table>
+    {% for d in data %}
+
+    <tr>
+       <th> {{ d['desc'] }} </th>
+       <td> {{ d['value'] }} </td>
+       <td> {{ d['units'] }} </td>
+    </tr>
+
+    {% endfor %}
+ </table>
