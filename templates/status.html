@@ -3,17 +3,74 @@
   <title>Greenhouse Status</title>
 
   <link rel=stylesheet type=text/css href="{{ url_for('static', filename='style.css') }}">
+  <link rel="icon" href="#">
 
   <h1>Greenhouse Status</h1>
 
-  <table>
-    {% for d in data %}
+  <body> </body>>
+ 
+<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.6/socket.io.min.js"></script>
+<script type="text/javascript" charset="utf-8">
+    var socket = io.connect('http://' + document.domain + ':' + location.port);
+    var tablebuilt=false;
+    var status_table=document.createElement('table');
+    var body=document.getElementsByTagName("body")[0];
+    var table_row=[];
+    
+    //Functions---------------
+    socket.on('connect', function() {
+        console.log('Websocket connected!');
+    });
 
-    <tr>
-       <th> {{ d['desc'] }} </th>
-       <td style="text-align:right"> {{ d['value'] }} </td>
-       <td> {{ d['units'] }} </td>
-    </tr>
-
-    {% endfor %}
- </table>
+    socket.on('on_newdata', function(msg) {
+        if(tablebuilt) {
+            const rx_data=JSON.parse(msg)
+            console.log(rx_data);
+            i=rx_data.i;
+            table_row[i-1].cells[1].innerHTML=rx_data.val;
+            table_row[i-1].cells[1].style.backgroundColor = "yellow";
+            setTimeout(ClearFlags,100);
+        };
+    });
+    
+    function ClearFlags() {
+    
+        for(i=0;i<table_row.length;i++){
+            table_row[i].cells[1].style.backgroundColor = "white";
+        }
+        
+    }
+    
+    
+    socket.on('on_tabledata', function(msg) {
+                
+        const tabledata=JSON.parse(msg)
+        console.log(tabledata);
+        
+        //Now build the table 
+        
+        for(i=0;i<tabledata.length;i++){
+                             
+            tr=document.createElement('tr');
+            tr.appendChild(document.createElement('th'));
+            tr.appendChild(document.createElement('td'));
+            tr.appendChild(document.createElement('td'));
+            
+            tr.cells[0].appendChild(document.createTextNode(tabledata[i].desc));
+            tr.cells[1].appendChild(document.createTextNode(tabledata[i].val));
+            tr.cells[2].appendChild(document.createTextNode(tabledata[i].units));
+            
+            table_row[i]=tr;
+            
+            console.log(tabledata[i]);
+            status_table.appendChild(tr);
+        }
+               
+        tablebuilt=true;
+        body.appendChild(status_table);
+    });   
+    
+    //Main code---------------------
+    socket.emit('get_table_data');
+    
+</script>

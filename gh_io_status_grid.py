@@ -40,14 +40,18 @@ class gh_io_status_grid(BoxLayout):
         self._statuslabel=dict()
         self._desclabel=dict()
         self._last_data=dict()
+        self._dataitemindex=dict()
+        self._webserver_newdata_fn=None
         fsize1='22sp'
-                        
+                   
+        itemindex=1     
         #Create a TextInput control for each parameter
         for tname in self._all_op_desc: #for each thread name
             self._controls[tname]=dict()
             self._statuslabel[tname]=dict()
             self._desclabel[tname]=dict()
             self._last_data[tname]=dict()
+            self._dataitemindex[tname]=dict()
             for pname in self._all_op_desc[tname]:  #for each output parameter                
                 lay=BoxLayout(orientation='horizontal')
                 ti0=Led(size_hint=(0.1,1),source='shapes/basic_disc.png',\
@@ -69,6 +73,7 @@ class gh_io_status_grid(BoxLayout):
                 self._last_data[tname][pname]=''
                 self._statuslabel[tname][pname]=ti0
                 self._desclabel[tname][pname]=ti1
+                self._dataitemindex[tname][pname]=itemindex
                 lay.add_widget(ti0)
                 lay.add_widget(ti1)
                 lay.add_widget(ti2)
@@ -76,11 +81,15 @@ class gh_io_status_grid(BoxLayout):
                 ti1.text=str(tname)+"/"+str(pname)
                 ti3.text=" "+str(self._all_op_desc[tname][pname]['punits'])
                 self.add_widget(lay)
+                itemindex=itemindex+1
         
         #Set the highlight to the first item
          
         self.desc_click(None)
                     
+    def set_webserver_newdata_fn(self,fn):
+        self._webserver_newdata_fn=fn
+    
     def process_data(self,data):
         #update the value
         self._controls[data['tname']][data['pname']].text=\
@@ -93,16 +102,26 @@ class gh_io_status_grid(BoxLayout):
         lbl.color_off=LED_COL_BLUE_OFF
         lbl.auto_off=True
         lbl.toggle_state()
+               
+        #send data to webserver if it's connected
+        if self._webserver_newdata_fn is not None:
+            webdata=dict()      
+            webdata['val']=self._last_data[data['tname']][data['pname']]
+            webdata['i']=self._dataitemindex[data['tname']][data['pname']]
+            self._webserver_newdata_fn(webdata)
         
     def get_table_data(self):
         data=[]
+        itemindex=1
         for tname in self._all_op_desc: #for each thread name
             for pname in self._all_op_desc[tname]:
                 row=dict()
                 row['desc']=self._desclabel[tname][pname].text
-                row['value']=self._last_data[tname][pname]
+                row['val']=self._last_data[tname][pname]
                 row['units']=self._all_op_desc[tname][pname]['punits']
+                row['i']=itemindex
                 data.append(row)
+                itemindex=itemindex+1
         return data
         
     def desc_click(self,inst):
