@@ -4,22 +4,38 @@ h1, h2          { margin: 0; }
 h1              { border-bottom: 2px solid #eee; }
 h2              { font-size: 1.2em; }
 
-table.dataframe, .dataframe th, .dataframe td {
-  border: none;
-  border-bottom: 1px solid #C8C8C8;
-  border-collapse: collapse;
-  text-align:left;
-  padding: 10px;
-  margin-bottom: 40px;
-  font-size: 0.9em;
+table {
+    width:100%;
+    height:100%;
 }
 
+
 th {
-    background-color: #add8e6;
+    background-color: #284673;
     color: white;
+    text-align:center;
+    
+}
+
+td {
+    font-size: 1.5em;
 }
 
 tr:nth-child(odd)       { background-color:#eee; }
 tr:nth-child(even)  { background-color:#fff; }
 
 tr:hover            { background-color: #ffff99;}
+
+/*Settings for phone screen*/
+@media only screen and (max-device-width: 480px) {
+    h1 {
+        font-size: 4em;
+    }
+    th {
+        font-size: 2.7em;
+    }
+    td {
+        font-size: 4em;
+    }
+
+}
