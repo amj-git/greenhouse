@@ -13,6 +13,7 @@ from io_thread import IO_Thread, IO_Thread_Manager, IO_Thread_ExampleIO, \
                         IO_Thread_ExampleController, \
                         IO_Thread_Moist
 from io_sprinkler import IO_Thread_Sprinkler
+from io_heater import IO_Thread_Heater
 from time import sleep
 from datetime import datetime, timedelta
 import queue
@@ -107,6 +108,17 @@ def gh_io_main(io_q,io_ctrl):
                          valve_pins=[13,19,26], \
                          valve_names=['hose','sprink1','sprink2'] )
     io_manager.add_thread(io_thread_sprink) 
+
+    #Heater on pin 25.  Fan on pin 24
+    io_thread_heater=IO_Thread_Heater(threadname="Heater", \
+                         out_q=local_io_q, \
+                         sim_hw=sim_mode, \
+                         period=5.1, \
+                         heat_pin=25, \
+                         fan_pin=24, \
+                         target_tname='DHT1', \
+                         target_pname='Temp' )
+    io_manager.add_thread(io_thread_heater) 
     
     '''
     #demo of a thread that uses data from another thread
@@ -149,6 +161,10 @@ def gh_io_main(io_q,io_ctrl):
                 iob=io_manager.get_iob()  #get the IO buffer
             if(cmd[:6]=='SPRINK'):
                 io_thread_sprink.command(cmd,data)
+            if(cmd[:6]=='HEATER'):
+                response=io_thread_heater.command(cmd,data)
+                if response is not None:
+                    io_ctrl.send(response)
                 
         try:
             op_data=local_io_q.get(timeout=0.1) #Block here max 100ms

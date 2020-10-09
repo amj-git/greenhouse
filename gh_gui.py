@@ -187,7 +187,68 @@ if __name__ == "__main__":
             self._gio.send_io_command('SPRINK:MODE','2,'+self.state_names[self.sprink2_state])
             
             
+    class HeaterScreen(Screen):
+        def __init__(self, **kwargs):
+            super(HeaterScreen, self).__init__(**kwargs)
+            
+                        
+            #ROOT STRUCTURE
+            self.root_box=BoxLayout(orientation='horizontal')
+            self.add_widget(self.root_box)
+            self.non_menu_root=BoxLayout()
+            self.root_box.add_widget(self.non_menu_root)
+            self.menu_root=BoxLayout(orientation='vertical',size_hint=(0.3,1))
+            self.root_box.add_widget(self.menu_root)
+                                         
+            #MENU
+            self.b1=ToggleButton(text='HEATER OFF',state='normal')
+            self.b1.bind(on_release=self.heateroffclick)
+            self.menu_root.add_widget(self.b1)
 
+            self.b2=ToggleButton(text='HEATER AUTO',state='normal')
+            self.b2.bind(on_release=self.heaterautoclick)
+            self.menu_root.add_widget(self.b2)
+
+            self.b3=ToggleButton(text='HEATER BOOST',state='normal')
+            self.b3.bind(on_release=self.heaterboostclick)
+            self.menu_root.add_widget(self.b3)
+            
+            b99=Button(text='Back',)
+            b99.bind(on_release=self.page_jump1)
+            self.menu_root.add_widget(b99)
+                        
+        def set_gio(self,gio):
+            self._gio=gio
+                
+        def page_jump1(self,*args):
+            self.parent.current='status_screen'
+            
+        def map_key_state(self,bool_state):
+            if bool_state:
+                return 'down'
+            else:
+                return 'normal'
+            
+        #read back the current heater mode
+        def get_mode(self):
+            mode=self._gio.io_query('HEATER:MODE?',0,1)
+            self.b1.state=self.map_key_state((mode=='OFF'))
+            self.b2.state=self.map_key_state(mode=='AUTO')
+            self.b3.state=self.map_key_state(mode=='BOOST')
+                       
+        def heateroffclick(self,*args):
+            self._gio.send_io_command('HEATER:MODE','OFF')
+            self.get_mode()
+                    
+        def heaterautoclick(self,*args):
+            self._gio.send_io_command('HEATER:MODE','AUTO')
+            self.get_mode()
+                    
+        def heaterboostclick(self,*args):
+            self._gio.send_io_command('HEATER:MODE','BOOST')
+            self.get_mode()
+            
+            
     
     class IOStatusScreen(Screen):
         def __init__(self, **kwargs):
@@ -207,10 +268,13 @@ if __name__ == "__main__":
             b1.bind(on_release=self.page_jump1)
             self.menu_root.add_widget(b1)
             
-            #MENU
             b12=Button(text='Sprinkler...',)
             b12.bind(on_release=self.page_jump2)
             self.menu_root.add_widget(b12)
+
+            b13=Button(text='Heater...',)
+            b13.bind(on_release=self.page_jump3)
+            self.menu_root.add_widget(b13)
             
             b2=Button(text='Exit',)
             b2.bind(on_release=self.quit_app)
@@ -234,7 +298,10 @@ if __name__ == "__main__":
             self.parent.current='graph_screen'
             
         def page_jump2(self,*args):
-            self.parent.current='sprinkler_screen'        
+            self.parent.current='sprinkler_screen'
+            
+        def page_jump3(self,*args):
+            self.parent.current='heater_screen'        
             
         def desc_click(self,*args):
             self._graph_screen.set_db(args[1])
@@ -392,10 +459,13 @@ if __name__ == "__main__":
             
             self.io_sprinkler_screen=SprinklerScreen(name='sprinkler_screen')
             
+            self.io_heater_screen=HeaterScreen(name='heater_screen')
+            
             #add in this order so status screen shows first
             self.add_widget(self.io_status_screen)
             self.add_widget(self.io_graph_screen)
             self.add_widget(self.io_sprinkler_screen)
+            self.add_widget(self.io_heater_screen)
             
             
         def start_io(self):
@@ -414,6 +484,7 @@ if __name__ == "__main__":
             self.io_graph_screen.start_io(self._gio,io_desc)
             self.io_status_screen.start_io(self._gio,io_desc)
             self.io_sprinkler_screen.set_gio(self._gio)
+            self.io_heater_screen.set_gio(self._gio)
              
             #Start IO events running
             self._gio.start_events()

@@ -100,6 +100,7 @@ class IO_Thread_Sprinkler(IO_Thread):
             
     #process a command string
     def command(self,cmd,data):
+        #SPRINK:MODE <1|2|3> <OFF|ON|AUTO> 
         if cmd=='SPRINK:MODE':
             d=data.split(',')
             valve_number=int(d[0].strip())
