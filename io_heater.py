@@ -19,14 +19,20 @@ class IO_Thread_Heater(IO_Thread):
         self._fan_pin=kwargs.get('fan_pin',False)
         self._target_tname=kwargs.get('target_tname',False)
         self._target_pname=kwargs.get('target_pname',False)
+        self._fan_overrun=kwargs.get('fan_overrun',3*60)  #fan overrun time in seconds
+        self._min_heat_on_time=kwargs.get('min_on_time',3*60)  
+        self._min_heat_off_time=kwargs.get('min_off_time',3*60)  
+        self._max_heat_on_time=kwargs.get('max_on_time',60*60)  
+        self._fan_prestart=kwargs.get('fan_prestart',10)  #fan prestart time in seconds
         self._schedule=[]
-        self._mode=['OFF']
+        self._mode='OFF'
         self._set_default_schedule()
         self._heat_state=0
         self._fan_state=0
-        self._target=12
+        self._target_temp=12
         self._boosttarget=20
         self._boost_minutes=60
+        self._reset_heat_timers()
         IO_Thread.__init__(self,**kwargs)
         
     
@@ -70,15 +76,78 @@ class IO_Thread_Heater(IO_Thread):
                             
     
     def _set_heat_state(self,state):
-        #Control the heater
-        self._heat_state=state
-        self._fan_state=state
+        #Determine Fan state
+        old_fan_state=self._fan_state
         
-        self._h_gpio.write(self._heat_pin,self._heat_state)
-        #Control the Fan
         if self._fan_pin is not False:
-            self._h_gpio.write(self.fan_pin,self._fan_state)            
-    
+            if state==1:  #if demand is high, start the fan
+                self._fan_state=1
+            else:         #stop the fan only if the overrun timer has expired (both on heater and fan)
+                if datetime.datetime.now() > self._last_heat_on_time+datetime.timedelta(seconds=self._fan_overrun):
+                    if datetime.datetime.now() > self._last_fan_on_time+datetime.timedelta(seconds=self._fan_overrun):
+                        self._fan_state=0
+                else:
+                    self._fan_state=1
+        
+        #record time of turning on fan for use later
+        if self._fan_state==1:
+            if old_fan_state==0:
+                self._last_fan_on_time=datetime.datetime.now()
+        
+        old_heat_state=self._heat_state
+        new_heat_state=old_heat_state #default to no change        
+                
+        #Determine the new Heater state    
+        if state==1:
+            if old_heat_state==0:
+                #check it's been off for long enough before turning it on 
+                if datetime.datetime.now() > self._last_heat_off_time+datetime.timedelta(seconds=self._min_heat_off_time):   
+                    #check the fan has been on for long enough before turning on
+                    if self._fan_pin is not False:
+                        if datetime.datetime.now() > self._last_fan_on_time+datetime.timedelta(seconds=self._fan_prestart):
+                            new_heat_state=1
+                    else:
+                        new_heat_state=1
+            if old_heat_state==1:
+                #Turn off if it's been on too long
+                if datetime.datetime.now() > self._last_heat_on_time+datetime.timedelta(seconds=self._max_heat_on_time):
+                    print ("Warning: Heater has been on continually for a long time.")
+                    new_heat_state=0
+        else:  #state==0
+            if old_heat_state==0:
+                #it's off, so no action
+                pass
+            if old_heat_state==1:
+                #check it's been on for long enough before turning off 
+                if datetime.datetime.now() > self._last_heat_on_time+datetime.timedelta(seconds=self._min_heat_on_time):
+                    new_heat_state=0
+        
+        #Log the times of any changes to the heat state
+        if new_heat_state==old_heat_state:
+            pass
+        else:  #heat state changed
+            if new_heat_state==1:
+                self._last_heat_on_time=datetime.datetime.now()
+            if new_heat_state==0:
+                self._last_heat_off_time=datetime.datetime.now()
+        
+        #set the new heat state
+        self._heat_state=new_heat_state
+        
+        #Write the new state to the HW
+        if self._sim_hw:
+            pass
+        else:                      
+            if self._fan_pin is not False:
+                self._h_gpio.write(self.fan_pin,self._fan_state)
+            self._h_gpio.write(self._heat_pin,self._heat_state)            
+        
+    #expires all the timers so the state machine starts from fresh
+    def _reset_heat_timers(self):
+        old_time=datetime.datetime.now()-datetime.timedelta(days=7)
+        self._last_heat_on_time=old_time
+        self._last_heat_off_time=old_time
+        self._last_fan_on_time=old_time
     
     def _control_heater(self):
         
@@ -87,27 +156,28 @@ class IO_Thread_Heater(IO_Thread):
             if datetime.datetime.now() > self._boost_end_time:  #boost has expired
                 self._mode=self._mode_before_boost
             else:
-                self._target=self._boosttarget
+                self._target_temp=self._boosttarget
             
         #AUTO MODE - Set target according to time of day schedule
         if self._mode=='AUTO':
-            self._target=12   #Awaiting code
+            self._target_temp=12   #Awaiting code
             
         #DECIDE THE HEATER STATE
         if self._mode=='OFF':
             self._set_heat_state(0)
         else:
             #Get the last temperature sensor reading
-            data=None
+            current_temp=None
             with self._iob.get_lock():
-                n=len(self._source_buf)
+                n=len(self._target_buf)
                 if n>0:
-                    time,current_temp=self._source_buf[0]  #last reading
+                    time,current_temp=self._target_buf[0]  #last reading
             
-            if data is None:
+            if current_temp is None:
                 self._set_heat_state(0)   #problem with sensor - turn off heat
             else:  #Execute thermostat
-                if current_temp < self._target:
+                #print ("mode: ",self._mode," target_temp: ",self._target_temp," current_temp: ",current_temp)
+                if (current_temp < self._target_temp):
                     self._set_heat_state(1)
                 else:
                     self._set_heat_state(0)
@@ -127,24 +197,23 @@ class IO_Thread_Heater(IO_Thread):
         (n,self._target_buf)=self._iob.get_databuffer(self._target_tname,\
                                                   self._target_pname)
         
-    #Turns off every valve
+    #Turns off all heater outputs
     def _turn_off(self):
         self._h_gpio.write(self._heat_pin,0)
         if self._fan_pin is not False:
             self._h_gpio.write(self.fan_pin,0)
                     
     def _heartbeat(self,triggertime):
-        if self._sim_hw:
-            IO_Thread._heartbeat(self,triggertime)
-        else:
-            #control the heater
-            self._control_heater()
-            
-            self._add_to_out_q('Heat',self._heat_state,triggertime)
-            self._add_to_out_q('Target',self._target,triggertime)
-            if self._fan_pin is not False:
-                self._add_to_out_q('Fan',self._fan_state,triggertime)
-            
+        
+        #control the heater
+        self._control_heater()
+        
+               
+        self._add_to_out_q('Heat',self._heat_state*100,triggertime) #return as percentage
+        self._add_to_out_q('Target',self._target_temp,triggertime)
+        if self._fan_pin is not False:
+            self._add_to_out_q('Fan',self._fan_state*100,triggertime) #return as percentage
+        
     #process a command string
     def command(self,cmd,data):
         print("io_heater:command ",cmd,data)
