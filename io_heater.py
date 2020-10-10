@@ -86,7 +86,7 @@ class IO_Thread_Heater(IO_Thread):
                 if datetime.datetime.now() > self._last_heat_off_time+datetime.timedelta(seconds=self._fan_overrun):
                     if datetime.datetime.now() > self._last_fan_on_time+datetime.timedelta(seconds=self._fan_overrun):
                         #only turn off if the heater is off
-                        if self.heat_state==0:
+                        if self._heat_state==0:
                             self._fan_state=0
                 else:
                     self._fan_state=1
