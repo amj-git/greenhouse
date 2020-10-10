@@ -25,7 +25,7 @@ class IO_Thread_Heater(IO_Thread):
         self._max_heat_on_time=kwargs.get('max_on_time',60*60)  
         self._fan_prestart=kwargs.get('fan_prestart',10)  #fan prestart time in seconds
         self._schedule=[]
-        self._mode='OFF'
+        self._mode='AUTO'
         self._set_default_schedule()
         self._heat_state=0
         self._fan_state=0
@@ -65,8 +65,9 @@ class IO_Thread_Heater(IO_Thread):
     #Temperature, hour start, min start, hour stop, min stop
     def _set_default_schedule(self):
         self._add_to_schedule([10.5,00,00,8,00])
-        self._add_to_schedule([14.5,8,00,19,00])
-        self._add_to_schedule([10.5,19,00,23,59])
+        self._add_to_schedule([14.5,8,00,19,30])
+        self._add_to_schedule([20.0,19,30,20,30])
+        self._add_to_schedule([10.5,20,30,23,59])
         print("Heater Schedule: ",self._schedule)
             
     #program_peg is [valve_index,start_h,start_m,stop_h,stop_m]
@@ -151,14 +152,17 @@ class IO_Thread_Heater(IO_Thread):
         self._last_fan_on_time=old_time
     
     def _get_scheduled_temperature(self):
-        t_now=datetime.now()
+        t_now=datetime.datetime.now()
+        
+        temp_target=-40
         
         for peg in self._schedule:
-            temp_target=-40
             peg_start=t_now.replace(hour=peg[1],minute=peg[2],second=0,microsecond=0)
             peg_stop=t_now.replace(hour=peg[3],minute=peg[4],second=0,microsecond=0)
             if (t_now>peg_start) and (t_now<peg_stop):
                 temp_target=peg[0]
+                
+        return temp_target
     
     def _control_heater(self):
         
