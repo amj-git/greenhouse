@@ -62,18 +62,17 @@ class IO_Thread_Heater(IO_Thread):
                   'punits':'%' }            
 
     
+    #Temperature, hour start, min start, hour stop, min stop
     def _set_default_schedule(self):
-        self._add_to_schedule([0,20,0,20,20])
-        self._add_to_schedule([1,19,15,19,35])
-        self._add_to_schedule([0,13,30,13,40])
-        #self._add_to_schedule([0,21,30,21,32])
+        self._add_to_schedule([10.5,00,00,8,00])
+        self._add_to_schedule([14.5,8,00,19,00])
+        self._add_to_schedule([10.5,19,00,23,59])
         print("Heater Schedule: ",self._schedule)
             
     #program_peg is [valve_index,start_h,start_m,stop_h,stop_m]
     #remember valve_index starts at 0
     def _add_to_schedule(self,program_peg):
         self._schedule.append(program_peg)
-                            
     
     def _set_heat_state(self,state):
         #Determine Fan state
@@ -151,6 +150,16 @@ class IO_Thread_Heater(IO_Thread):
         self._last_heat_off_time=old_time
         self._last_fan_on_time=old_time
     
+    def _get_scheduled_temperature(self):
+        t_now=datetime.now()
+        
+        for peg in self._schedule:
+            temp_target=-40
+            peg_start=t_now.replace(hour=peg[1],minute=peg[2],second=0,microsecond=0)
+            peg_stop=t_now.replace(hour=peg[3],minute=peg[4],second=0,microsecond=0)
+            if (t_now>peg_start) and (t_now<peg_stop):
+                temp_target=peg[0]
+    
     def _control_heater(self):
         
         #BOOST MODE - Set target to the boost target or drop out of boost
@@ -162,10 +171,11 @@ class IO_Thread_Heater(IO_Thread):
             
         #AUTO MODE - Set target according to time of day schedule
         if self._mode=='AUTO':
-            self._target_temp=12   #Awaiting code
+            self._target_temp=self._get_scheduled_temperature()
             
         #DECIDE THE HEATER STATE
         if self._mode=='OFF':
+            self._target_temp=-40  #set low value so it's obvious it's switched off
             self._set_heat_state(0)
         else:
             #Get the last temperature sensor reading
