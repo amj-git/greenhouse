@@ -139,7 +139,7 @@ class IO_Thread_Heater(IO_Thread):
             pass
         else:                      
             if self._fan_pin is not False:
-                self._h_gpio.write(self.fan_pin,self._fan_state)
+                self._h_gpio.write(self._fan_pin,self._fan_state)
             self._h_gpio.write(self._heat_pin,self._heat_state)            
         
     #expires all the timers so the state machine starts from fresh
@@ -201,7 +201,7 @@ class IO_Thread_Heater(IO_Thread):
     def _turn_off(self):
         self._h_gpio.write(self._heat_pin,0)
         if self._fan_pin is not False:
-            self._h_gpio.write(self.fan_pin,0)
+            self._h_gpio.write(self._fan_pin,0)
                     
     def _heartbeat(self,triggertime):
         
