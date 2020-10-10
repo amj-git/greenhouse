@@ -85,7 +85,9 @@ class IO_Thread_Heater(IO_Thread):
             else:         #stop the fan only if the overrun timer has expired (both on heater and fan)
                 if datetime.datetime.now() > self._last_heat_off_time+datetime.timedelta(seconds=self._fan_overrun):
                     if datetime.datetime.now() > self._last_fan_on_time+datetime.timedelta(seconds=self._fan_overrun):
-                        self._fan_state=0
+                        #only turn off if the heater is off
+                        if self.heat_state==0:
+                            self._fan_state=0
                 else:
                     self._fan_state=1
         
@@ -146,7 +148,7 @@ class IO_Thread_Heater(IO_Thread):
     def _reset_heat_timers(self):
         old_time=datetime.datetime.now()-datetime.timedelta(days=7)
         self._last_heat_on_time=old_time
-        self._last_heat_off_time=datetime.datetime.now() #set last off time to now
+        self._last_heat_off_time=old_time
         self._last_fan_on_time=old_time
     
     def _control_heater(self):
