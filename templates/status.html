@@ -7,13 +7,14 @@
 
   <h1>Greenhouse Status</h1>
 
-  <body> </body>>
+  <body> </body>
  
 <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.6/socket.io.min.js"></script>
 <script type="text/javascript" charset="utf-8">
     var socket = io.connect('http://' + document.domain + ':' + location.port);
     var tablebuilt=false;
     var status_table=document.createElement('table');
+    var graph_link=document.createElement('a');
     var body=document.getElementsByTagName("body")[0];
     var table_row=[];
     
@@ -68,6 +69,12 @@
                
         tablebuilt=true;
         body.appendChild(status_table);
+        
+        graph_link.appendChild(document.createTextNode('Graph...'));
+        graph_link.title='Graph...';
+        graph_link.href='graph1';
+        
+        body.appendChild(graph_link);
     });   
     
     //Main code---------------------

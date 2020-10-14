@@ -56,6 +56,11 @@ class gh_webserver(Thread):
         self.statusgrid.set_webserver_newdata_fn(send_newdata)
         
         #----------------------
+        @app.route('/graph1')
+        def graph1():
+            return render_template('graph1.html')
+        
+        #----------------------
         if __name__ == '__main__':
             self.socketio.run(self.app,
                 host='0.0.0.0', port=5000, debug=True, use_debugger=False,

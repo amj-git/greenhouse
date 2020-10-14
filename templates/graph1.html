@@ -1,0 +1,88 @@
+<!doctype html>
+
+  <title>Graph</title>
+
+  <link rel=stylesheet type=text/css href="{{ url_for('static', filename='style.css') }}">
+  <link rel="icon" href="#">
+
+  <h1>Graph</h1>
+
+  <body>  </body>
+ 
+<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.6/socket.io.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js" integrity="sha512-s+xg36jbIujB2S2VKfpGmlC3T5V2TF3lY48DX7u2r9XzGzgPsa6wTpOQA7J9iffvdeBN0q9tKzRxVxw1JviZPg==" crossorigin="anonymous"></script>
+<script type="text/javascript" charset="utf-8">
+    var socket = io.connect('http://' + document.domain + ':' + location.port);
+    var tablebuilt=false;
+    var param_chooser=document.createElement('select');
+    var chart_canvas=document.createElement('canvas');
+    var chart;
+    
+    var body=document.getElementsByTagName("body")[0];
+    var table_row=[];
+    
+    //Functions---------------
+    socket.on('connect', function() {
+        console.log('Websocket connected!');
+    });
+
+    socket.on('on_newdata', function(msg) {
+        if(tablebuilt) {
+            //do nothing
+        };
+    });
+
+    function build_chart() {
+        chart=new Chart(chart_canvas, {
+            // The type of chart we want to create
+            type: 'line',
+        
+            // The data for our dataset
+            data: {
+                labels: ['I', 'am', 'amazing', 'I', 'drew', 'a', 'graph'],
+                datasets: [{
+                    label: 'This Graph is a work in progress!',
+                    backgroundColor: 'rgb(255, 20, 40)',
+                    borderColor: 'rgb(255, 99, 132)',
+                    data: [0, 10, 5, 2, 20, 30, 45]
+                }]
+            },
+        
+            // Configuration options go here
+            options: {}        
+        });
+    };
+
+    
+    socket.on('on_tabledata', function(msg) {
+                
+        const tabledata=JSON.parse(msg)
+        console.log(tabledata);
+        
+        //COMBOBOX--------------
+        for(i=0;i<tabledata.length;i++){
+                             
+            option=document.createElement('option');
+            option.text=tabledata[i].desc;
+            
+            param_chooser.add(option);
+        }       
+        
+        body.appendChild(param_chooser);
+        
+        //GRAPH--------------
+        build_chart();  
+        body.appendChild(chart_canvas);
+        
+              
+        
+        tablebuilt=true;
+        
+        
+        
+    });   
+    
+    //Main code---------------------
+    socket.emit('get_table_data');
+    
+</script>
