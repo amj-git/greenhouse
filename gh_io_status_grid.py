@@ -117,6 +117,8 @@ class gh_io_status_grid(BoxLayout):
             for pname in self._all_op_desc[tname]:
                 row=dict()
                 row['desc']=self._desclabel[tname][pname].text
+                row['tname']=tname
+                row['pname']=pname
                 row['val']=self._last_data[tname][pname]
                 row['units']=self._all_op_desc[tname][pname]['punits']
                 row['i']=itemindex

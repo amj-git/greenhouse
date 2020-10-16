@@ -490,7 +490,7 @@ if __name__ == "__main__":
             self._gio.start_events()
             
         def start_webserver(self):
-            self.webserver=gh_webserver(self.io_status_screen.statusgrid)
+            self.webserver=gh_webserver(self.io_status_screen.statusgrid,self._gio)
             self.webserver.start()    
         
         #this is the callback that is triggered by the io_q events

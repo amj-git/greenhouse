@@ -11,6 +11,8 @@
  
 <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.6/socket.io.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js" integrity="sha512-s+xg36jbIujB2S2VKfpGmlC3T5V2TF3lY48DX7u2r9XzGzgPsa6wTpOQA7J9iffvdeBN0q9tKzRxVxw1JviZPg==" crossorigin="anonymous"></script>
+<!--<script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js" integrity="sha512-UXumZrZNiOwnTcZSHLOfcTs0aos2MzBWHXOHOuB0J/R44QB0dwY5JgfbvljXcklVf65Gc4El6RjZ+lnwd2az2g==" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-zoom/0.7.7/chartjs-plugin-zoom.min.js" integrity="sha512-8E9fPF4pjWxI0dpprpn4WYeciAMo2kh6xN0COFxvTfurMttjZzih/sBp+Fxu49Zr6IUSp4sqWY6KLecnqOCwxA==" crossorigin="anonymous"></script> -->
 <script type="text/javascript" charset="utf-8">
     var socket = io.connect('http://' + document.domain + ':' + location.port);
     var tablebuilt=false;
@@ -20,6 +22,10 @@
     
     var body=document.getElementsByTagName("body")[0];
     var table_row=[];
+    var tname=[]
+    var pname=[]
+    var unit_string=[]
+    var TestButton=document.createElement('button');
     
     //Functions---------------
     socket.on('connect', function() {
@@ -32,7 +38,30 @@
         };
     });
 
+    function OnTestButtonClick() {
+        var date=new Date();
+        var xstop=date.getTime();
+        var xstart=xstop-4*60*60*1000;
+        
+        var j=param_chooser.selectedIndex;               
+        
+        socket.emit('get_graph_raw_data',tname[j],pname[j],xstart,xstop);
+    };
+    
+
+    function add_buttons() {
+        //Test Button
+        TestButton.onclick = OnTestButtonClick;
+        TestButton.innerHTML="Refresh";
+        body.appendChild(TestButton);
+        
+        
+        param_chooser.onchange = OnTestButtonClick;
+        
+    };
+
     function build_chart() {
+        var j=param_chooser.selectedIndex;           
         chart=new Chart(chart_canvas, {
             // The type of chart we want to create
             type: 'line',
@@ -42,21 +71,148 @@
                 labels: ['I', 'am', 'amazing', 'I', 'drew', 'a', 'graph'],
                 datasets: [{
                     label: 'This Graph is a work in progress!',
-                    backgroundColor: 'rgb(255, 20, 40)',
+                    backgroundColor: 'rgb(255, 200, 40)',
                     borderColor: 'rgb(255, 99, 132)',
                     data: [0, 10, 5, 2, 20, 30, 45]
-                }]
-            },
-        
-            // Configuration options go here
-            options: {}        
+                }],
+                
+                //options------------------
+                options: {
+                    scales: {
+                        xAxes: [{
+                            scaleLabel: {
+                                display: true,
+                                labelString: 'Time'
+                            }
+                        }],
+                        yAxes: [{
+                            scaleLabel: {
+                                display: true,
+                                labelString: tname[j]
+                            }
+                        }]
+                    }
+                }
+                //end options----------------
+
+/*,
+                //plugins                
+                plugins: {
+                    zoom: {
+                        // Container for pan options
+                        pan: {
+                            // Boolean to enable panning
+                            enabled: true,
+                            mode: 'xy',
+                            rangeMin: {
+                                // Format of min pan range depends on scale type
+                                x: null,
+                                y: null
+                            },
+                            rangeMax: {
+                                // Format of max pan range depends on scale type
+                                x: null,
+                                y: null
+                            },
+                
+
+                            speed: 20,
+                            threshold: 10,
+                
+                            
+                        },
+                
+                        // Container for zoom options
+                        zoom: {
+                            
+                            enabled: true,
+                            drag: true,    
+                            mode: 'xy',
+                            rangeMin: {
+                                // Format of min zoom range depends on scale type
+                                x: null,
+                                y: null
+                            },
+                            rangeMax: {
+                                // Format of max zoom range depends on scale type
+                                x: null,
+                                y: null
+                            },
+                
+                            speed: 0.1,
+                            threshold: 2,
+                            sensitivity: 3,
+                        }
+                    }
+                }
+                //end plugins--------------------
+   */             
+                
+                
+            }
         });
+        add_buttons();
+        OnTestButtonClick();
     };
 
     
+    socket.on('on_graphrawdata', function(msg) {
+                
+        var rdata_x=[];
+        var rdata_y=[];
+        var j=param_chooser.selectedIndex;
+                
+        const rdata=JSON.parse(msg);
+        console.log(rdata);
+     
+        for(i=0;i<rdata.length;i++)
+        {
+            rdata_x[i]=rdata[i][0]
+            rdata_y[i]=rdata[i][1]
+            
+        }
+     
+        
+        //Plot on graph
+                
+        // The data for our dataset
+        chart.data= {
+            labels: rdata_x,
+            datasets: [{
+                label: 'Raw Data (4 hours)',
+                backgroundColor: 'rgb(255, 255, 40)',
+                borderColor: 'rgb(255, 99, 132)',
+                data: rdata_y
+            }]
+        };
+    
+        // Configuration options go here
+        chart.options= {
+            scales: {
+                xAxes: [{
+                    scaleLabel: {
+                        display: true,
+                        labelString: 'Time'
+                    }
+                }],
+                yAxes: [{
+                    scaleLabel: {
+                        display: true,
+                        labelString: pname[j] + " [" + unit_string[j] + "]"
+                    }
+                }]
+            }
+        };
+        
+        chart.update();
+            
+        
+        
+    });
+    
     socket.on('on_tabledata', function(msg) {
                 
-        const tabledata=JSON.parse(msg)
+        const tabledata=JSON.parse(msg);
         console.log(tabledata);
         
         //COMBOBOX--------------
@@ -64,7 +220,9 @@
                              
             option=document.createElement('option');
             option.text=tabledata[i].desc;
-            
+            pname[i]=tabledata[i].pname;
+            tname[i]=tabledata[i].tname;  
+            unit_string[i]=tabledata[i].units;
             param_chooser.add(option);
         }       
         
