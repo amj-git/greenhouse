@@ -36,11 +36,12 @@
 
   <h1>Graph</h1>
   <select class="sel1" name="pchooser" id="pchooser"></select>
-  <button class="btn" name="leftbutton" id="leftbutton"><i class="fa fa-arrow-left fa-2x"></i></button>
-  <button class="btn" name="zoomoutbutton" id="zoomoutbutton"><i class="fa fa-search-minus fa-2x"></i></button>
-  <button class="btn" name="zoominbutton" id="zoominbutton"><i class="fa fa-search-plus fa-2x"></i></button>
-  <button class="btn" name="rightbutton" id="rightbutton"><i class="fa fa-arrow-right fa-2x"></i></button>
-  <button class="btn" name="testbutton" id="testbutton"><i class="fa fa-play fa-2x"></i></button>
+  <button class="btn" name="leftbutton" id="leftbutton" title="Go back in time"><i class="fa fa-arrow-left fa-2x"></i></button>
+  <button class="btn" name="zoomoutbutton" id="zoomoutbutton" title="Zoom out in time"><i class="fa fa-search-minus fa-2x"></i></button>
+  <button class="btn" name="zoominbutton" id="zoominbutton" title="Zoom in in time"><i class="fa fa-search-plus fa-2x"></i></button>
+  <button class="btn" name="rightbutton" id="rightbutton" title="Go forward in time"><i class="fa fa-arrow-right fa-2x"></i></button>
+  <button class="btn" name="testbutton" id="testbutton" title="Align right with current time and run live"><i class="fa fa-play fa-2x"></i></button>
+  <button class="btn" name="autoscalebutton" id="autoscalebutton" title="Autoscale Y Axis (otherwise use default limits for that parameter)"><i class="fa fa-arrows-v fa-2x"></i></button>
   
   </body>
  
@@ -114,15 +115,19 @@
     var tname=[]
     var pname=[]
     var unit_string=[]
+    var pymin=[]
+    var pymax=[]
     var TestButton=document.getElementById('testbutton');
     var LeftButton=document.getElementById('leftbutton');
     var ZoomOutButton=document.getElementById('zoomoutbutton');
     var ZoomInButton=document.getElementById('zoominbutton');
     var RightButton=document.getElementById('rightbutton');
+    var AutoScaleButton=document.getElementById('autoscalebutton');
     var date001=new Date();
     var xstop;
     var zoomindex=12;
     var real_time=0;
+    var autoscalemode=true;
     
     //Functions---------------
     socket.on('connect', function() {
@@ -192,6 +197,14 @@
         OnRefreshData();
     };
     
+    function OnAutoScaleClick() {
+        autoscalemode=!autoscalemode;
+    
+        
+        UpdateYlimits();
+        chart.update();
+        
+    };
     
     function UpdateXlimits() {
                    
@@ -201,6 +214,24 @@
             chart.options.scales.xAxes[0].ticks.max=new Date(xstop);
     }
     
+    function UpdateYlimits() {
+    
+        if(autoscalemode)
+            {
+                AutoScaleButton.style.background='#00ff00';
+                delete chart.options.scales.yAxes[0].ticks.min;
+                delete chart.options.scales.yAxes[0].ticks.max;
+            }
+            else
+            {
+                AutoScaleButton.style.background='';
+                var j=param_chooser.selectedIndex;
+                chart.options.scales.yAxes[0].ticks.min=pymin[j];
+                chart.options.scales.yAxes[0].ticks.max=pymax[j];
+                            
+            }
+    }
+        
     function OnRefreshData() {
         var j=param_chooser.selectedIndex;
         
@@ -234,6 +265,8 @@
         TestButton.onclick = OnResetButtonClick;
         //TestButton.innerHTML=">>";
         //body.appendChild(TestButton);
+        
+        AutoScaleButton.onclick = OnAutoScaleClick;
                 
         param_chooser.onchange = OnRefreshData;
         
@@ -297,6 +330,8 @@
                         });
         }
         
+        UpdateYlimits();
+        
         //Plot on graph                
         chart.data= {
             //labels: rdata_x,
@@ -338,6 +373,8 @@
             pname[i]=tabledata[i].pname;
             tname[i]=tabledata[i].tname;  
             unit_string[i]=tabledata[i].units;
+            pymin[i]=tabledata[i].min;
+            pymax[i]=tabledata[i].max;
             param_chooser.add(option);
         }       
         

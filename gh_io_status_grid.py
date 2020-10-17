@@ -121,6 +121,8 @@ class gh_io_status_grid(BoxLayout):
                 row['pname']=pname
                 row['val']=self._last_data[tname][pname]
                 row['units']=self._all_op_desc[tname][pname]['punits']
+                row['min']=self._all_op_desc[tname][pname]['pmin']
+                row['max']=self._all_op_desc[tname][pname]['pmax']
                 row['i']=itemindex
                 data.append(row)
                 itemindex=itemindex+1
