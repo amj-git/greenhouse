@@ -148,7 +148,7 @@
                     x:new Date()
                 };
                 chart.data.datasets[0].data.push(new_data);
-                xstop=new_data.x;
+                xstop=new_data.x.getTime();
                 UpdateXlimits();
                 chart.update();
             }
@@ -212,6 +212,8 @@
                    
             var d1=new Date(xstart);
             var d2=new Date(xstop);       
+                   
+            //console.log(" xstart=",xstart," xstop=",xstop," d1=",d1," d2=",d2);
                    
             chart.options.scales.xAxes[0].ticks.min=d1;
             chart.options.scales.xAxes[0].ticks.max=d2;
