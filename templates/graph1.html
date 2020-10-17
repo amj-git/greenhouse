@@ -5,27 +5,124 @@
   <link rel=stylesheet type=text/css href="{{ url_for('static', filename='style.css') }}">
   <link rel="icon" href="#">
 
-  <h1>Graph</h1>
+<!-- Add icon library -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<style>
+.btn {
+  background-color: DodgerBlue;
+  border: none;
+  color: white;
+  padding: 12px 16px;
+  font-size: 16px;
+  cursor: pointer;
+}
 
-  <body>  </body>
+.sel1 {
+  background-color: #687f95;
+  border: none;
+  color: white;
+  padding: 12px 16px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+/* Darker background on mouse-over */
+.btn:hover {
+  background-color: RoyalBlue;
+}
+</style>
+
+  <body>
+
+  <h1>Graph</h1>
+  <select class="sel1" name="pchooser" id="pchooser"></select>
+  <button class="btn" name="leftbutton" id="leftbutton"><i class="fa fa-arrow-left fa-2x"></i></button>
+  <button class="btn" name="zoomoutbutton" id="zoomoutbutton"><i class="fa fa-search-minus fa-2x"></i></button>
+  <button class="btn" name="zoominbutton" id="zoominbutton"><i class="fa fa-search-plus fa-2x"></i></button>
+  <button class="btn" name="rightbutton" id="rightbutton"><i class="fa fa-arrow-right fa-2x"></i></button>
+  <button class="btn" name="testbutton" id="testbutton"><i class="fa fa-play fa-2x"></i></button>
+  
+  </body>
  
 <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.6/socket.io.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js" integrity="sha512-s+xg36jbIujB2S2VKfpGmlC3T5V2TF3lY48DX7u2r9XzGzgPsa6wTpOQA7J9iffvdeBN0q9tKzRxVxw1JviZPg==" crossorigin="anonymous"></script>
 <!--<script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js" integrity="sha512-UXumZrZNiOwnTcZSHLOfcTs0aos2MzBWHXOHOuB0J/R44QB0dwY5JgfbvljXcklVf65Gc4El6RjZ+lnwd2az2g==" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-zoom/0.7.7/chartjs-plugin-zoom.min.js" integrity="sha512-8E9fPF4pjWxI0dpprpn4WYeciAMo2kh6xN0COFxvTfurMttjZzih/sBp+Fxu49Zr6IUSp4sqWY6KLecnqOCwxA==" crossorigin="anonymous"></script> -->
 <script type="text/javascript" charset="utf-8">
+    
+    //Millisecond quantities
+    const M_SEC=1000
+    const M_MINUTE=60*1000
+    const M_HOUR=60*M_MINUTE
+    const M_DAY=24*M_HOUR
+    const M_WEEK=7*M_DAY
+    const M_MONTH=30*M_DAY
+
+    //available spans
+    const xzoomlevels=[   12*M_MONTH,
+                    6*M_MONTH,
+                    3*M_MONTH,
+                    1*M_MONTH,
+                    2*M_WEEK,
+                    1*M_WEEK,
+                    5*M_DAY,
+                    2*M_DAY,
+                    1*M_DAY,
+                    12*M_HOUR,
+                    6*M_HOUR,
+                    3*M_HOUR,
+                    1*M_HOUR,
+                    30*M_MINUTE,
+                    10*M_MINUTE,
+                    5*M_MINUTE,
+                    2*M_MINUTE,
+                    1*M_MINUTE]   
+    
+    //corresponding major tick spacing
+    const xtickspacing=[  1*M_MONTH,
+                    1*M_MONTH,
+                    1*M_MONTH,
+                    4*M_WEEK,
+                    2*M_DAY,
+                    1*M_DAY,
+                    1*M_DAY,
+                    12*M_HOUR,
+                    2*M_HOUR,
+                    1*M_HOUR,
+                    1*M_HOUR,
+                    1*M_HOUR,
+                    10*M_MINUTE,
+                    5*M_MINUTE,
+                    2*M_MINUTE,
+                    1*M_MINUTE,
+                    20*M_SEC,
+                    10*M_SEC]
+        
+    
+    
     var socket = io.connect('http://' + document.domain + ':' + location.port);
     var tablebuilt=false;
-    var param_chooser=document.createElement('select');
+    var param_chooser=document.getElementById("pchooser");
+    
+    //document.createElement('select');
     var chart_canvas=document.createElement('canvas');
     var chart;
-    
+        
     var body=document.getElementsByTagName("body")[0];
     var table_row=[];
     var tname=[]
     var pname=[]
     var unit_string=[]
-    var TestButton=document.createElement('button');
+    var TestButton=document.getElementById('testbutton');
+    var LeftButton=document.getElementById('leftbutton');
+    var ZoomOutButton=document.getElementById('zoomoutbutton');
+    var ZoomInButton=document.getElementById('zoominbutton');
+    var RightButton=document.getElementById('rightbutton');
+    var date001=new Date();
+    var xstop;
+    var zoomindex=12;
+    var real_time=0;
     
     //Functions---------------
     socket.on('connect', function() {
@@ -33,180 +130,198 @@
     });
 
     socket.on('on_newdata', function(msg) {
-        if(tablebuilt) {
-            //do nothing
+        var j=param_chooser.selectedIndex;
+        
+        if(real_time==1 && tablebuilt) {
+            const rx_data=JSON.parse(msg)
+            i=rx_data.i;
+            if(i==(j+1))
+            {
+                //console.log(rx_data);
+                new_data={
+                    y:rx_data.val,
+                    x:new Date()
+                };
+                chart.data.datasets[0].data.push(new_data);
+                xstop=new_data.x;
+                UpdateXlimits();
+                chart.update();
+            }
+
+            
         };
     });
 
-    function OnTestButtonClick() {
+    function OnResetButtonClick() {
         var date=new Date();
-        var xstop=date.getTime();
-        var xstart=xstop-4*60*60*1000;
+        xstop=date.getTime();
+        OnRefreshData();
+        real_time=1;
+        TestButton.style.background='#00ff00';
+    };
+    
+    function OnRightButtonClick() {
+        real_time=0;
+        TestButton.style.background='';
+        xstop=xstop+xtickspacing[zoomindex];
+        OnRefreshData();
         
-        var j=param_chooser.selectedIndex;               
+    };
+    
+    function OnZoomOutButtonClick() {
+        real_time=0;
+        TestButton.style.background='';
+        zoomindex--;
+        if(zoomindex<0) zoomindex=0;
+        OnRefreshData();        
+    };
+    
+    function OnZoomInButtonClick() {
+        real_time=0;
+        TestButton.style.background='';
+        zoomindex++;
+        maxzoomindex=xzoomlevels.length-1;
+        if(zoomindex>maxzoomindex) zoomindex=maxzoomindex;
+        OnRefreshData();        
+    };
+    
+    function OnLeftButtonClick() {
+        real_time=0;
+        TestButton.style.background='';
+        xstop=xstop-xtickspacing[zoomindex];
+        OnRefreshData();
+    };
+    
+    
+    function UpdateXlimits() {
+                   
+            xstart=xstop-xzoomlevels[zoomindex];
+                   
+            chart.options.scales.xAxes[0].ticks.min=new Date(xstart);
+            chart.options.scales.xAxes[0].ticks.max=new Date(xstop);
+    }
+    
+    function OnRefreshData() {
+        var j=param_chooser.selectedIndex;
         
-        socket.emit('get_graph_raw_data',tname[j],pname[j],xstart,xstop);
+            UpdateXlimits();
+                           
+            socket.emit('get_graph_raw_data',tname[j],pname[j],xstart,xstop);    
+        
+
     };
     
 
     function add_buttons() {
-        //Test Button
-        TestButton.onclick = OnTestButtonClick;
-        TestButton.innerHTML="Refresh";
-        body.appendChild(TestButton);
         
+                
+        LeftButton.onclick = OnLeftButtonClick;
+        //LeftButton.innerHTML="<";
+        //body.appendChild(LeftButton);
         
-        param_chooser.onchange = OnTestButtonClick;
+        ZoomOutButton.onclick = OnZoomOutButtonClick;
+        //ZoomOutButton.innerHTML="-";
+        //body.appendChild(ZoomOutButton);
+        
+        ZoomInButton.onclick = OnZoomInButtonClick;
+        //ZoomInButton.innerHTML="+";
+        //body.appendChild(ZoomInButton);
+        
+        RightButton.onclick = OnRightButtonClick;
+        //RightButton.innerHTML=">";
+        //body.appendChild(RightButton);
+
+        TestButton.onclick = OnResetButtonClick;
+        //TestButton.innerHTML=">>";
+        //body.appendChild(TestButton);
+                
+        param_chooser.onchange = OnRefreshData;
         
     };
 
     function build_chart() {
         var j=param_chooser.selectedIndex;           
         chart=new Chart(chart_canvas, {
-            // The type of chart we want to create
-            type: 'line',
-        
-            // The data for our dataset
-            data: {
-                labels: ['I', 'am', 'amazing', 'I', 'drew', 'a', 'graph'],
-                datasets: [{
-                    label: 'This Graph is a work in progress!',
-                    backgroundColor: 'rgb(255, 200, 40)',
-                    borderColor: 'rgb(255, 99, 132)',
-                    data: [0, 10, 5, 2, 20, 30, 45]
-                }],
-                
-                //options------------------
+                type:'scatter',
                 options: {
+                    legend: {
+                        display:false
+                    },
+                    animation: {
+                        duration: 0 
+                    },
                     scales: {
+                        
                         xAxes: [{
+                            type: 'time',
+                            time: {
+                                displayFormats: {
+                                    minute: 'DD-MMM HH:mm',
+                                    second: 'HH:mm:ss',
+                                    hour: 'DD-MMM HH:mm'
+                                },
+                                tooltipFormat: 'DD-MMM-YYYY HH:mm'
+                            },
                             scaleLabel: {
                                 display: true,
                                 labelString: 'Time'
                             }
-                        }],
+                        }], 
                         yAxes: [{
                             scaleLabel: {
                                 display: true,
-                                labelString: tname[j]
+                                labelString: 'Value'
                             }
-                        }]
+                        }]           
                     }
                 }
-                //end options----------------
-
-/*,
-                //plugins                
-                plugins: {
-                    zoom: {
-                        // Container for pan options
-                        pan: {
-                            // Boolean to enable panning
-                            enabled: true,
-                            mode: 'xy',
-                            rangeMin: {
-                                // Format of min pan range depends on scale type
-                                x: null,
-                                y: null
-                            },
-                            rangeMax: {
-                                // Format of max pan range depends on scale type
-                                x: null,
-                                y: null
-                            },
-                
-
-                            speed: 20,
-                            threshold: 10,
-                
-                            
-                        },
-                
-                        // Container for zoom options
-                        zoom: {
-                            
-                            enabled: true,
-                            drag: true,    
-                            mode: 'xy',
-                            rangeMin: {
-                                // Format of min zoom range depends on scale type
-                                x: null,
-                                y: null
-                            },
-                            rangeMax: {
-                                // Format of max zoom range depends on scale type
-                                x: null,
-                                y: null
-                            },
-                
-                            speed: 0.1,
-                            threshold: 2,
-                            sensitivity: 3,
-                        }
-                    }
-                }
-                //end plugins--------------------
-   */             
-                
-                
-            }
-        });
+            });        
+        
         add_buttons();
-        OnTestButtonClick();
+        OnResetButtonClick();
     };
 
     
     socket.on('on_graphrawdata', function(msg) {
                 
-        var rdata_x=[];
-        var rdata_y=[];
+        var rdata2=[];
         var j=param_chooser.selectedIndex;
                 
         const rdata=JSON.parse(msg);
-        console.log(rdata);
+        //console.log(rdata);
      
         for(i=0;i<rdata.length;i++)
         {
-            rdata_x[i]=rdata[i][0]
-            rdata_y[i]=rdata[i][1]
-            
+            rdata2.push({ x:new Date(rdata[i][0]),
+                          y:rdata[i][1]
+                        });
         }
-     
         
-        //Plot on graph
-                
-        // The data for our dataset
+        //Plot on graph                
         chart.data= {
-            labels: rdata_x,
+            //labels: rdata_x,
             datasets: [{
-                label: 'Raw Data (4 hours)',
+                label: 'Raw Data',
                 backgroundColor: 'rgb(255, 255, 40)',
                 borderColor: 'rgb(255, 99, 132)',
-                data: rdata_y
+                data: rdata2,
+                showLine:true,
+                radius:1.5,
+                tension:0,
+                borderWidth:1,
+                fill:false
             }]
         };
-    
-        // Configuration options go here
-        chart.options= {
-            scales: {
-                xAxes: [{
-                    scaleLabel: {
-                        display: true,
-                        labelString: 'Time'
-                    }
-                }],
-                yAxes: [{
-                    scaleLabel: {
-                        display: true,
-                        labelString: pname[j] + " [" + unit_string[j] + "]"
-                    }
-                }]
-            }
+        
+        //console.log(chart);
+        
+        //Update y axis label
+        chart.options.scales.yAxes[0].scaleLabel={
+            display: true,
+            labelString: pname[j] + " [" + unit_string[j] + "]"        
         };
         
         chart.update();
-            
-        
         
     });
     
@@ -226,8 +341,7 @@
             param_chooser.add(option);
         }       
         
-        body.appendChild(param_chooser);
-        
+                
         //GRAPH--------------
         build_chart();  
         body.appendChild(chart_canvas);
