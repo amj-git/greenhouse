@@ -210,9 +210,25 @@
                    
             xstart=xstop-xzoomlevels[zoomindex];
                    
-            chart.options.scales.xAxes[0].ticks.min=new Date(xstart);
-            chart.options.scales.xAxes[0].ticks.max=new Date(xstop);
+            var d1=new Date(xstart);
+            var d2=new Date(xstop);       
+                   
+            chart.options.scales.xAxes[0].ticks.min=d1;
+            chart.options.scales.xAxes[0].ticks.max=d2;
+            
+            var m1=moment(d1);
+            var m2=moment(d2);
+            var span_string=m1.from(m2,true);
+            
+            chart.options.scales.xAxes[0].scaleLabel={
+                display: true,
+                fontSize: 20,
+                labelString: "Time " + "(Span=" + span_string + ")"         
+            };
+            
+            
     }
+    
     
     function UpdateYlimits() {
     
@@ -353,6 +369,7 @@
         //Update y axis label
         chart.options.scales.yAxes[0].scaleLabel={
             display: true,
+            fontSize: 20,
             labelString: pname[j] + " [" + unit_string[j] + "]"        
         };
         
