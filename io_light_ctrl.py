@@ -111,7 +111,7 @@ class IO_Thread_Light_Ctrl(IO_Thread):
             if datetime.datetime.now() > self._boost_end_time:  #boost has expired
                 self._mode=self._mode_before_boost
             else:
-                self._target_temp=self._boosttarget
+                self._target_light=self._boosttarget
             
         #AUTO MODE - Set target according to time of day schedule
         if self._mode=='AUTO':
@@ -130,14 +130,17 @@ class IO_Thread_Light_Ctrl(IO_Thread):
                     time,current_light=self._target_buf[0]  #last reading
             
             if current_light is None:
-                self._set_light_state(0)   #problem with sensor - turn off heat
+                self._set_light_state(0,False)   #problem with sensor - turn off heat
             else:  #Execute integral controller
                 #print ("mode: ",self._mode," target_light: ",self._target_light," current_light: ",current_light)
-                if (current_light < self._target_light):
-                    self._set_light_state(5,True)
-                else:
-                    
-                    self._set_light_state(5,True)
+                deltalux=current_light-self._target_light
+                deltabrightness=-deltalux*(0.5/100)
+                MAXDELTABRIGHTNESS=15
+                if deltabrightness>MAXDELTABRIGHTNESS:
+                    deltabrightness=MAXDELTABRIGHTNESS
+                if deltabrightness<-MAXDELTABRIGHTNESS:
+                    deltabrightness=-MAXDELTABRIGHTNESS
+                self._set_light_state(deltabrightness,True)
                    
                 
     def _startup(self):
