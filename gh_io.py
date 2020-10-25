@@ -14,6 +14,7 @@ from io_thread import IO_Thread, IO_Thread_Manager, IO_Thread_ExampleIO, \
                         IO_Thread_Moist
 from io_sprinkler import IO_Thread_Sprinkler
 from io_heater import IO_Thread_Heater
+from io_light_ctrl import IO_Thread_Light_Ctrl
 from time import sleep
 from datetime import datetime, timedelta
 import queue
@@ -76,8 +77,15 @@ def gh_io_main(io_q,io_ctrl):
     io_thread6=IO_Thread_BH1750(threadname="Inside Light Sensor", \
                          out_q=local_io_q, \
                          sim_hw=sim_mode, \
-                         period=2 )
+                         period=5 )
     io_manager.add_thread(io_thread6)
+    
+    io_thread6b=IO_Thread_BH1750(threadname="Plant Light Sensor", \
+                         out_q=local_io_q, \
+                         sim_hw=sim_mode, \
+                         period=10, \
+                         addr=0x5c )
+    io_manager.add_thread(io_thread6b)    
     
     #DHT sensors on pin 17 and 27
     io_thread7=IO_Thread_DHT22(threadname="DHT1", \
@@ -119,6 +127,16 @@ def gh_io_main(io_q,io_ctrl):
                          target_tname='DHT1', \
                          target_pname='Temp' )
     io_manager.add_thread(io_thread_heater) 
+    
+    #Light Controller on pin GPIO18.
+    io_thread_light_ctrl1=IO_Thread_Light_Ctrl(threadname="Grow Light", \
+                         out_q=local_io_q, \
+                         sim_hw=sim_mode, \
+                         period=5.32, \
+                         light_ctrl_pin=18, \
+                         target_tname='Plant Light Sensor', \
+                         target_pname='Light' )
+    io_manager.add_thread(io_thread_light_ctrl1)    
     
     '''
     #demo of a thread that uses data from another thread
@@ -165,6 +183,10 @@ def gh_io_main(io_q,io_ctrl):
                 response=io_thread_heater.command(cmd,data)
                 if response is not None:
                     io_ctrl.send(response)
+            if(cmd[:10]=='LIGHT_CTRL'):
+                response=io_thread_light_ctrl1.command(cmd,data)
+                if response is not None:
+                    io_ctrl.send(response)                    
                 
         try:
             op_data=local_io_q.get(timeout=0.1) #Block here max 100ms
