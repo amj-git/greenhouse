@@ -1,5 +1,6 @@
 #Lighting controller (intended for controlling grow lights)
-#lighting is assumed to have 0-10V control inputs
+#An interface circuit converts the PWM average DC value to a 0-10V signal for
+#control of LED growlights
 
 
 from io_thread import IO_Thread
@@ -25,6 +26,7 @@ class IO_Thread_Light_Ctrl(IO_Thread):
         self._target_light=0
         self._boosttarget=100000
         self._boost_minutes=30
+        self._hw_pwm=False   #use SW PWM due to PWM channel conflict with GPIO12 which is used by moisture sensor
                
         
         IO_Thread.__init__(self,**kwargs)
@@ -48,20 +50,20 @@ class IO_Thread_Light_Ctrl(IO_Thread):
           
 
     
-    #Temperature, hour start, min start, hour stop, min stop
+    #Target, hour start, min start, hour stop, min stop
     def _set_default_schedule(self):
         self._add_to_schedule([0,00,00,7,00])
         self._add_to_schedule([5000,7,00,19,30])
         self._add_to_schedule([0,19,30,23,59])
         print("Lighting Control Schedule: ",self._schedule)
             
-    #program_peg is [valve_index,start_h,start_m,stop_h,stop_m]
+    #program_peg is [target value,start_h,start_m,stop_h,stop_m]
     #remember valve_index starts at 0
     def _add_to_schedule(self,program_peg):
         self._schedule.append(program_peg)
     
     def _set_light_state(self,val,deltamode):
-        
+              
         #if deltamode is true, apply a delta rather than absolute
         if deltamode:
             self._light_state=self._light_state+val
@@ -79,16 +81,18 @@ class IO_Thread_Light_Ctrl(IO_Thread):
         else:                      
             PWM_OFFSET=0
             PWM_SLOPE=(100-PWM_OFFSET)/100
-            val_scaled=PWM_OFFSET+val*PWM_SLOPE
+            val_scaled=PWM_OFFSET+self._light_state*PWM_SLOPE
             if(val_scaled>100):
                 val_scaled=100       
             if(val_scaled<0):
                 val_scaled=0
-            self._h_gpio.hardware_PWM(self._light_ctrl_pin,\
-                                      self._pwm_freq,\
-                                      round(val_scaled*10000))
-        
-                                
+            
+            if self._hw_pwm:
+                self._h_gpio.hardware_PWM(self._light_ctrl_pin,\
+                                          self._pwm_freq,\
+                                          round(val_scaled*10000))
+            else:
+                self._h_gpio.set_PWM_dutycycle(self._light_ctrl_pin,val_scaled)
         
         
     def _get_scheduled_target(self):
@@ -147,9 +151,16 @@ class IO_Thread_Light_Ctrl(IO_Thread):
         IO_Thread._startup(self)
         
         if not self._sim_hw:
-            #set up the PWM pin (must be a HW PWM pin)
-            self._h_gpio.set_mode(self._light_ctrl_pin,pigpio.ALT5)  #set up PWM
-            self._pwm_freq=500000  #500kHz        
+            if self._hw_pwm:
+                #HW PWM
+                self._h_gpio.set_mode(self._light_ctrl_pin,pigpio.ALT5)  #set up PWM on REF pin
+                self._pwm_freq=500000  #500kHz
+            else:
+                #SW PWM
+                self._h_gpio.set_mode(self._light_ctrl_pin,pigpio.OUTPUT)  #set up PWM
+                self._h_gpio.set_PWM_range(self._light_ctrl_pin,100)
+                self._h_gpio.set_PWM_frequency(self._light_ctrl_pin,100000) #set highest freq
+                self._pwm_freq=(self._h_gpio.get_PWM_frequency(self._light_ctrl_pin)) #should get 8kHz
             self._turn_off()
         
         #get the data source buffer - it is a deque
