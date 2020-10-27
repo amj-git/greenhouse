@@ -96,6 +96,8 @@ class IO_Thread(Thread):
         self._out_q=kwargs.get('out_q',0)
         self._sim_hw=kwargs.get('sim_hw',False)
         self._period=kwargs.get('period',10)
+        self._has_master=False
+        self._slave_thread=kwargs.get('slave_thread',None)  #another thread's heartbeat can be triggered if you set this to another IOThread object
         self._threadname=kwargs.get('threadname','Unnamed Thread')
         self._op_desc=dict()
         self._set_op_desc() #set the parameter descriptions
@@ -107,11 +109,18 @@ class IO_Thread(Thread):
         #add any tidy-up here
         pass
     
+    #manual heartbeat trigger.  This is used by a master thread to trigger a slave - used in controllers
+    def trigger_heartbeat(self,lasttime):
+        self._has_master=True
+        self._heartbeat(lasttime)
+    
     def run(self):
         pr_cont.set_name(self._threadname) #allows process to be idenfified in htop
         self._startup()
         while(self.__running):
             lasttime=datetime.now()
+            if self._slave_thread is not None:  #trigger slaves first so data can be used right away
+                self._slave_thread.trigger_heartbeat(lasttime)
             self._heartbeat(lasttime)
             if not self.__running: #speed up shutdown
                 break

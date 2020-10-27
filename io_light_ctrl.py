@@ -54,7 +54,25 @@ class IO_Thread_Light_Ctrl(IO_Thread):
     def _set_default_schedule(self):
         self._add_to_schedule([0,00,00,7,00])
         self._add_to_schedule([5000,7,00,19,30])
-        self._add_to_schedule([0,19,30,23,59])
+        
+        #test pattern
+        self._add_to_schedule([7000,21,0,21,1])
+        self._add_to_schedule([6500,21,1,21,2])
+        self._add_to_schedule([6000,21,2,21,3])
+        self._add_to_schedule([5500,21,3,21,4])
+        self._add_to_schedule([5000,21,4,21,5])
+        self._add_to_schedule([4500,21,5,21,6])
+        self._add_to_schedule([4000,21,6,21,7])
+        self._add_to_schedule([3500,21,7,21,8])
+        self._add_to_schedule([3000,21,8,21,9])
+        self._add_to_schedule([2500,21,9,21,10])
+        self._add_to_schedule([2000,21,10,21,11])
+        self._add_to_schedule([1500,21,11,21,12])
+        self._add_to_schedule([1000,21,12,21,13])
+        self._add_to_schedule([500,21,13,21,14])
+        self._add_to_schedule([0,21,14,21,15])
+        
+        #self._add_to_schedule([3500,19,30,23,59])
         print("Lighting Control Schedule: ",self._schedule)
             
     #program_peg is [target value,start_h,start_m,stop_h,stop_m]
@@ -79,9 +97,10 @@ class IO_Thread_Light_Ctrl(IO_Thread):
         if self._sim_hw:
             pass
         else:                      
-            PWM_OFFSET=0
-            PWM_SLOPE=(100-PWM_OFFSET)/100
-            val_scaled=PWM_OFFSET+self._light_state*PWM_SLOPE
+            PWM_MIN=0
+            PWM_MAX=80
+            PWM_SLOPE=(PWM_MAX-PWM_MIN)/100
+            val_scaled=PWM_MIN+self._light_state*PWM_SLOPE
             if(val_scaled>100):
                 val_scaled=100       
             if(val_scaled<0):
@@ -92,7 +111,8 @@ class IO_Thread_Light_Ctrl(IO_Thread):
                                           self._pwm_freq,\
                                           round(val_scaled*10000))
             else:
-                self._h_gpio.set_PWM_dutycycle(self._light_ctrl_pin,val_scaled)
+                pass
+                self._h_gpio.set_PWM_dutycycle(self._light_ctrl_pin,val_scaled*2)  #0 - 200
         
         
     def _get_scheduled_target(self):
@@ -138,7 +158,7 @@ class IO_Thread_Light_Ctrl(IO_Thread):
             else:  #Execute integral controller
                 #print ("mode: ",self._mode," target_light: ",self._target_light," current_light: ",current_light)
                 deltalux=current_light-self._target_light
-                deltabrightness=-deltalux*(0.5/100)
+                deltabrightness=-deltalux*(0.5/100)    #LED/sensor gain is around 120 lux per percent
                 MAXDELTABRIGHTNESS=15
                 if deltabrightness>MAXDELTABRIGHTNESS:
                     deltabrightness=MAXDELTABRIGHTNESS
@@ -158,8 +178,8 @@ class IO_Thread_Light_Ctrl(IO_Thread):
             else:
                 #SW PWM
                 self._h_gpio.set_mode(self._light_ctrl_pin,pigpio.OUTPUT)  #set up PWM
-                self._h_gpio.set_PWM_range(self._light_ctrl_pin,100)
-                self._h_gpio.set_PWM_frequency(self._light_ctrl_pin,100000) #set highest freq
+                self._h_gpio.set_PWM_range(self._light_ctrl_pin,200)
+                self._h_gpio.set_PWM_frequency(self._light_ctrl_pin,1000) #set 1kHz to get 200 steps (0.5% steps)
                 self._pwm_freq=(self._h_gpio.get_PWM_frequency(self._light_ctrl_pin)) #should get 8kHz
             self._turn_off()
         
@@ -172,14 +192,14 @@ class IO_Thread_Light_Ctrl(IO_Thread):
     #Turns off all outputs
     def _turn_off(self):
         self._set_light_state(0,False)
-                    
+                                       
     def _heartbeat(self,triggertime):
         
         #control the lighting
         self._control_lighting()
         
                
-        self._add_to_out_q('Brightness',self._light_state,triggertime) 
+        self._add_to_out_q('Brightness',round(self._light_state*2)/2,triggertime) 
         self._add_to_out_q('Target',self._target_light,triggertime)
         
     #process a command string

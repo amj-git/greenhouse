@@ -80,10 +80,10 @@ def gh_io_main(io_q,io_ctrl):
                          period=5 )
     io_manager.add_thread(io_thread6)
     
+    #note this light sensor will be slaved off the light controller timing, so period does not matter
     io_thread6b=IO_Thread_BH1750(threadname="Plant Light Sensor", \
                          out_q=local_io_q, \
                          sim_hw=sim_mode, \
-                         period=10, \
                          addr=0x5c )
     io_manager.add_thread(io_thread6b)    
     
@@ -135,7 +135,8 @@ def gh_io_main(io_q,io_ctrl):
                          period=5.32, \
                          light_ctrl_pin=18, \
                          target_tname='Plant Light Sensor', \
-                         target_pname='Light' )
+                         target_pname='Light', \
+                         slave_thread=io_thread6b )
     io_manager.add_thread(io_thread_light_ctrl1)    
     
     '''
