@@ -52,27 +52,32 @@ class IO_Thread_Light_Ctrl(IO_Thread):
     
     #Target, hour start, min start, hour stop, min stop
     def _set_default_schedule(self):
-        self._add_to_schedule([0,00,00,7,00])
-        self._add_to_schedule([5000,7,00,19,30])
         
+        self._add_to_schedule([2000,6,0,7,0])
+        self._add_to_schedule([4000,7,0,8,0])
+        self._add_to_schedule([5000,8,0,18,0])
+        self._add_to_schedule([3500,18,0,19,0])
+        self._add_to_schedule([1000,19,0,19,30])
+                
         #test pattern
-        self._add_to_schedule([7000,21,0,21,1])
-        self._add_to_schedule([6500,21,1,21,2])
-        self._add_to_schedule([6000,21,2,21,3])
-        self._add_to_schedule([5500,21,3,21,4])
-        self._add_to_schedule([5000,21,4,21,5])
-        self._add_to_schedule([4500,21,5,21,6])
-        self._add_to_schedule([4000,21,6,21,7])
-        self._add_to_schedule([3500,21,7,21,8])
-        self._add_to_schedule([3000,21,8,21,9])
-        self._add_to_schedule([2500,21,9,21,10])
-        self._add_to_schedule([2000,21,10,21,11])
-        self._add_to_schedule([1500,21,11,21,12])
-        self._add_to_schedule([1000,21,12,21,13])
-        self._add_to_schedule([500,21,13,21,14])
-        self._add_to_schedule([0,21,14,21,15])
-        
-        #self._add_to_schedule([3500,19,30,23,59])
+        INCLUDE_TEST_PATTERN=False
+        if INCLUDE_TEST_PATTERN:
+            self._add_to_schedule([7000,21,0,21,1])
+            self._add_to_schedule([6500,21,1,21,2])
+            self._add_to_schedule([6000,21,2,21,3])
+            self._add_to_schedule([5500,21,3,21,4])
+            self._add_to_schedule([5000,21,4,21,5])
+            self._add_to_schedule([4500,21,5,21,6])
+            self._add_to_schedule([4000,21,6,21,7])
+            self._add_to_schedule([3500,21,7,21,8])
+            self._add_to_schedule([3000,21,8,21,9])
+            self._add_to_schedule([2500,21,9,21,10])
+            self._add_to_schedule([2000,21,10,21,11])
+            self._add_to_schedule([1500,21,11,21,12])
+            self._add_to_schedule([1000,21,12,21,13])
+            self._add_to_schedule([500,21,13,21,14])
+            self._add_to_schedule([0,21,14,21,15])
+            
         print("Lighting Control Schedule: ",self._schedule)
             
     #program_peg is [target value,start_h,start_m,stop_h,stop_m]
@@ -155,6 +160,8 @@ class IO_Thread_Light_Ctrl(IO_Thread):
             
             if current_light is None:
                 self._set_light_state(0,False)   #problem with sensor - turn off heat
+            elif self._target_light==0:
+                self._set_light_state(0,False)   #set brightness to zero when target is zero
             else:  #Execute integral controller
                 #print ("mode: ",self._mode," target_light: ",self._target_light," current_light: ",current_light)
                 deltalux=current_light-self._target_light
