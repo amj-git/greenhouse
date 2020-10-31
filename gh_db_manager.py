@@ -157,9 +157,13 @@ class param_db:
         if ptype=='temp':
             self._val_comp_mult=100.0
         elif ptype=='humid':
-            self._val_comp_mult=10.0            
+            self._val_comp_mult=10.0
+        elif ptype=='light_level':
+            self._val_comp_mult=10.0 # % brightness for grow light
+        elif ptype=='moist':
+            self._val_comp_mult=10.0             
         elif ptype=='light':
-            self._val_comp_mult=1.0
+            self._val_comp_mult=1.0   #lux values
         else:
             self._val_comp_mult=1.0
         
