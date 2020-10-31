@@ -23,6 +23,7 @@ class IO_Thread_Light_Ctrl(IO_Thread):
         self._mode='AUTO'
         self._set_default_schedule()
         self._light_state=0
+        self._light_state_actual=0
         self._target_light=0
         self._boosttarget=100000
         self._boost_minutes=30
@@ -100,7 +101,7 @@ class IO_Thread_Light_Ctrl(IO_Thread):
         
         #Write the new state to the HW
         if self._sim_hw:
-            pass
+            self._light_state_actual=self._light_state
         else:                      
             PWM_MIN=0
             PWM_MAX=80
@@ -115,9 +116,12 @@ class IO_Thread_Light_Ctrl(IO_Thread):
                 self._h_gpio.hardware_PWM(self._light_ctrl_pin,\
                                           self._pwm_freq,\
                                           round(val_scaled*10000))
+                self._light_state_actual=self._light_state
             else:
                 pass
                 self._h_gpio.set_PWM_dutycycle(self._light_ctrl_pin,val_scaled*2)  #0 - 200
+                self._light_state_actual=((0.5*round(val_scaled*2))-PWM_MIN)/PWM_SLOPE  #calculate the rounded setting
+            
         
         
     def _get_scheduled_target(self):
@@ -165,7 +169,7 @@ class IO_Thread_Light_Ctrl(IO_Thread):
             else:  #Execute integral controller
                 #print ("mode: ",self._mode," target_light: ",self._target_light," current_light: ",current_light)
                 deltalux=current_light-self._target_light
-                deltabrightness=-deltalux*(0.5/100)    #LED/sensor gain is around 120 lux per percent
+                deltabrightness=-deltalux*(0.425/120)    #LED/sensor gain is around 120 lux per percent
                 MAXDELTABRIGHTNESS=15
                 if deltabrightness>MAXDELTABRIGHTNESS:
                     deltabrightness=MAXDELTABRIGHTNESS
@@ -206,7 +210,7 @@ class IO_Thread_Light_Ctrl(IO_Thread):
         self._control_lighting()
         
                
-        self._add_to_out_q('Brightness',round(self._light_state*2)/2,triggertime) 
+        self._add_to_out_q('Brightness',self._light_state_actual,triggertime) 
         self._add_to_out_q('Target',self._target_light,triggertime)
         
     #process a command string
