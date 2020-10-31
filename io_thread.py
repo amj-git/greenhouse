@@ -121,7 +121,8 @@ class IO_Thread(Thread):
             lasttime=datetime.now()
             if self._slave_thread is not None:  #trigger slaves first so data can be used right away
                 self._slave_thread.trigger_heartbeat(lasttime)
-            self._heartbeat(lasttime)
+            if not self._has_master:  #trigger the heartbeat unless I'm a slave
+                self._heartbeat(lasttime)
             if not self.__running: #speed up shutdown
                 break
             endtime=datetime.now()
