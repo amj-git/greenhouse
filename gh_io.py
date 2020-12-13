@@ -53,19 +53,19 @@ def gh_io_main(io_q,io_ctrl):
     io_manager.add_thread(io_thread2)
     '''
      
-    io_thread3=IO_Thread_DS18B20(threadname="Probe 1", \
+    io_thread3=IO_Thread_DS18B20(threadname="Outside", \
                          out_q=local_io_q, \
                          sim_hw=sim_mode, \
                          period=4, \
                          addr='28-00000c362511')
-#    io_manager.add_thread(io_thread3)
+    io_manager.add_thread(io_thread3)
     
-    io_thread4=IO_Thread_DS18B20(threadname="Probe 2", \
+    io_thread4=IO_Thread_DS18B20(threadname="Inside2", \
                          out_q=local_io_q, \
                          sim_hw=sim_mode, \
                          period=2.5, \
                          addr='28-00000c36cbaa')
-#    io_manager.add_thread(io_thread4)
+    io_manager.add_thread(io_thread4)
     
     io_thread5=IO_Thread_DS18B20(threadname="Control Box", \
                          out_q=local_io_q, \
@@ -78,22 +78,22 @@ def gh_io_main(io_q,io_ctrl):
                          out_q=local_io_q, \
                          sim_hw=sim_mode, \
                          period=5 )
-#    io_manager.add_thread(io_thread6)
+    io_manager.add_thread(io_thread6)
     
     #note this light sensor will be slaved off the light controller timing, so period does not matter
     io_thread6b=IO_Thread_BH1750(threadname="Plant Light Sensor", \
                          out_q=local_io_q, \
                          sim_hw=sim_mode, \
                          addr=0x5c )
-#    io_manager.add_thread(io_thread6b)    
+    io_manager.add_thread(io_thread6b)    
     
     #DHT sensors on pin 17 and 27
-    io_thread7=IO_Thread_DHT22(threadname="DHT1", \
+    io_thread7=IO_Thread_DHT22(threadname="Inside", \
                          out_q=local_io_q, \
                          sim_hw=sim_mode, \
                          period=5, \
                          pin=17 )
-#    io_manager.add_thread(io_thread7)
+    io_manager.add_thread(io_thread7)
     
     #Moisture sensors on pin 10,9,11
     #ref is on pin 12

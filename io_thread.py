@@ -272,7 +272,8 @@ class IO_Thread_DS18B20(IO_Thread):
             temp_c,temp_f=w1_read_temp(self._addr,self._h_gpio)
             #print("IO_Thread: "+self._threadname+" _heartbeat() temp_c=",temp_c)
             op_data=dict()
-            self._add_to_out_q('Temp',temp_c,triggertime)
+            if temp_c is not None:
+                self._add_to_out_q('Temp',temp_c,triggertime)
             
     def _shutdown(self):
         IO_Thread._shutdown(self)
@@ -309,8 +310,10 @@ class IO_Thread_BH1750(IO_Thread):
         else:
             light=self._l_sensor.read()
             #print("IO_Thread: "+self._threadname+" _heartbeat() light=",light)
-            
-            self._add_to_out_q('Light',light,triggertime)
+            if light!=-999:
+                self._add_to_out_q('Light',light,triggertime)
+            else:
+                print(self._threadname+" BH1750 Sensor: Read Error")
         
     def _shutdown(self):
         if not self._sim_hw:
@@ -358,8 +361,11 @@ class IO_Thread_DHT22(IO_Thread):
             temp_c=self._dht_obj.temperature()
             
             #print("IO_Thread: "+self._threadname+" _heartbeat() temp_c=",temp_c," humid=",humid)  
-            self._add_to_out_q('Temp',temp_c,triggertime)
-            self._add_to_out_q('Humid',humid,triggertime)
+            if (temp_c!=-999) and (humid !=-999):
+                self._add_to_out_q('Temp',temp_c,triggertime)
+                self._add_to_out_q('Humid',humid,triggertime)
+            else:
+                print(self._threadname+" DHT22 Sensor: Read Error")
         
     def _shutdown(self):
         if not self._sim_hw:
