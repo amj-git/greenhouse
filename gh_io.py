@@ -56,21 +56,21 @@ def gh_io_main(io_q,io_ctrl):
     io_thread3=IO_Thread_DS18B20(threadname="Outside", \
                          out_q=local_io_q, \
                          sim_hw=sim_mode, \
-                         period=4, \
-                         addr='28-00000c362511')
+                         period=10.1, \
+                         addr='28-030897944034')
     io_manager.add_thread(io_thread3)
     
     io_thread4=IO_Thread_DS18B20(threadname="Inside2", \
                          out_q=local_io_q, \
                          sim_hw=sim_mode, \
-                         period=2.5, \
+                         period=10.2, \
                          addr='28-00000c36cbaa')
     io_manager.add_thread(io_thread4)
     
     io_thread5=IO_Thread_DS18B20(threadname="Control Box", \
                          out_q=local_io_q, \
                          sim_hw=sim_mode, \
-                         period=3, \
+                         period=10.3, \
                          addr='28-011925cbf4fb')
     io_manager.add_thread(io_thread5)
     
@@ -124,9 +124,9 @@ def gh_io_main(io_q,io_ctrl):
                          period=5.1, \
                          heat_pin=25, \
                          fan_pin=24, \
-                         target_tname='DHT1', \
+                         target_tname='Inside', \
                          target_pname='Temp' )
-#    io_manager.add_thread(io_thread_heater) 
+    io_manager.add_thread(io_thread_heater) 
     
     #Light Controller on pin GPIO18.
     io_thread_light_ctrl1=IO_Thread_Light_Ctrl(threadname="Grow Light", \
