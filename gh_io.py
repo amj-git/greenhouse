@@ -58,34 +58,34 @@ def gh_io_main(io_q,io_ctrl):
                          sim_hw=sim_mode, \
                          period=4, \
                          addr='28-00000c362511')
-    io_manager.add_thread(io_thread3)
+#    io_manager.add_thread(io_thread3)
     
     io_thread4=IO_Thread_DS18B20(threadname="Probe 2", \
                          out_q=local_io_q, \
                          sim_hw=sim_mode, \
                          period=2.5, \
                          addr='28-00000c36cbaa')
-    io_manager.add_thread(io_thread4)
+#    io_manager.add_thread(io_thread4)
     
     io_thread5=IO_Thread_DS18B20(threadname="Control Box", \
                          out_q=local_io_q, \
                          sim_hw=sim_mode, \
                          period=3, \
-                         addr='28-00000c37dfa4')
+                         addr='28-011925cbf4fb')
     io_manager.add_thread(io_thread5)
     
     io_thread6=IO_Thread_BH1750(threadname="Inside Light Sensor", \
                          out_q=local_io_q, \
                          sim_hw=sim_mode, \
                          period=5 )
-    io_manager.add_thread(io_thread6)
+#    io_manager.add_thread(io_thread6)
     
     #note this light sensor will be slaved off the light controller timing, so period does not matter
     io_thread6b=IO_Thread_BH1750(threadname="Plant Light Sensor", \
                          out_q=local_io_q, \
                          sim_hw=sim_mode, \
                          addr=0x5c )
-    io_manager.add_thread(io_thread6b)    
+#    io_manager.add_thread(io_thread6b)    
     
     #DHT sensors on pin 17 and 27
     io_thread7=IO_Thread_DHT22(threadname="DHT1", \
@@ -93,7 +93,7 @@ def gh_io_main(io_q,io_ctrl):
                          sim_hw=sim_mode, \
                          period=5, \
                          pin=17 )
-    io_manager.add_thread(io_thread7)
+#    io_manager.add_thread(io_thread7)
     
     #Moisture sensors on pin 10,9,11
     #ref is on pin 12
@@ -126,7 +126,7 @@ def gh_io_main(io_q,io_ctrl):
                          fan_pin=24, \
                          target_tname='DHT1', \
                          target_pname='Temp' )
-    io_manager.add_thread(io_thread_heater) 
+#    io_manager.add_thread(io_thread_heater) 
     
     #Light Controller on pin GPIO18.
     io_thread_light_ctrl1=IO_Thread_Light_Ctrl(threadname="Grow Light", \
@@ -137,7 +137,7 @@ def gh_io_main(io_q,io_ctrl):
                          target_tname='Plant Light Sensor', \
                          target_pname='Light', \
                          slave_thread=io_thread6b )
-    io_manager.add_thread(io_thread_light_ctrl1)    
+#    io_manager.add_thread(io_thread_light_ctrl1)    
     
     '''
     #demo of a thread that uses data from another thread
@@ -180,14 +180,14 @@ def gh_io_main(io_q,io_ctrl):
                 iob=io_manager.get_iob()  #get the IO buffer
             if(cmd[:6]=='SPRINK'):
                 io_thread_sprink.command(cmd,data)
-            if(cmd[:6]=='HEATER'):
-                response=io_thread_heater.command(cmd,data)
-                if response is not None:
-                    io_ctrl.send(response)
-            if(cmd[:10]=='LIGHT_CTRL'):
-                response=io_thread_light_ctrl1.command(cmd,data)
-                if response is not None:
-                    io_ctrl.send(response)                    
+   #         if(cmd[:6]=='HEATER'):
+    #            response=io_thread_heater.command(cmd,data)
+    #            if response is not None:
+    #                io_ctrl.send(response)
+    #        if(cmd[:10]=='LIGHT_CTRL'):
+    #            response=io_thread_light_ctrl1.command(cmd,data)
+    #            if response is not None:
+    #                io_ctrl.send(response)                    
                 
         try:
             op_data=local_io_q.get(timeout=0.1) #Block here max 100ms
