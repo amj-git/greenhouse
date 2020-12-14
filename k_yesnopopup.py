@@ -8,24 +8,29 @@ from kivy.properties import StringProperty
 from kivy.lang.builder import Builder
 Builder.load_string('''
 #<KvLang>
+#:set fsize1 "20sp"
 <YesNoPopup>:
     FloatLayout:
+        
         Label:
             size_hint: 0.8, 0.6
             pos_hint: {'x': 0.1, 'y':0.4}
             text: root.message
+            font_size: fsize1
 
         Button:
             size_hint: 0.4, 0.35
             pos_hint: {'x':0.1, 'y':0.05}
             text: 'Yes'
             on_release: root.dispatch('on_yes')
+            font_size: fsize1
         
         Button:
             size_hint: 0.4, 0.35
             pos_hint: {'x':0.5, 'y':0.05}
             text: 'No'
             on_release: root.dispatch('on_no')
+            font_size: fsize1
 
 #</KvLang>
 ''')
@@ -38,6 +43,7 @@ class YesNoPopup(Popup):
     def __init__(self, **kwargs) -> None:
         super(YesNoPopup, self).__init__(**kwargs)
         self.auto_dismiss = False
+        self.title_size="20sp"
     
     def on_yes(self):
         pass

@@ -367,8 +367,8 @@ if __name__ == "__main__":
             pop = YesNoPopup(
                 title='Exit',
                 message='Are you sure you want to exit the program ?',
-                size_hint=(0.4, 0.3),
-                pos_hint={'x':0.3, 'y':0.35}
+                size_hint=(0.6, 0.4),
+                pos_hint={'x':0.2, 'y':0.3}
             )
             pop.bind(
                 on_yes=self.quit_app,
@@ -422,9 +422,6 @@ if __name__ == "__main__":
             self.root_box.add_widget(self.menu_root)
                                          
             #MENU
-            b1=Button(text='Status...',)
-            b1.bind(on_release=self.page_jump1)
-            self.menu_root.add_widget(b1)
             
             b2=ToggleButton(text='Raw',state='down')
             b2.bind(on_release=self.refresh_graph)
@@ -435,6 +432,11 @@ if __name__ == "__main__":
             b3.bind(on_release=self.refresh_graph)
             self.menu_root.add_widget(b3)
             self._comp_data_button=b3
+            
+            b1=Button(text='Back',)
+            b1.bind(on_release=self.page_jump1)
+            self.menu_root.add_widget(b1)
+            
             
             #NON-MENU
             self.graph_title=Label(color=[1,1,1,1],size=(400,25),size_hint=(1,None))

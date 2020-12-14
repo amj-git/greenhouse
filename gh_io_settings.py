@@ -13,6 +13,8 @@ from kivy.uix.textinput import TextInput
 from kivy.uix.widget import Widget
 from kivy.uix.screenmanager import ScreenManager, Screen
 
+fsize1='22sp'
+
 class SettingsScreen(Screen):
     def __init__(self, **kwargs):
         super(SettingsScreen, self).__init__(**kwargs)
@@ -101,13 +103,15 @@ class NetworkSettingsScreen(Screen):
         #NON-MENU
         my_ip_addr=self._webserver.get_server_ip()
         box=BoxLayout(orientation='horizontal')
-        self._ip_label=Label(text='IP Address')
-        self._ip_data=Label(text=my_ip_addr)
+        self._ip_label=Label(text='IP Address',font_size=fsize1)
+        self._ip_data=Label(text=my_ip_addr,font_size=fsize1)
         box.add_widget(self._ip_label)
         box.add_widget(self._ip_data)
         
         self.non_menu_root.add_widget(box)
         
+        tx1=TextInput(text='Text')
+        self.non_menu_root.add_widget(tx1)
         
             
     def page_jump1(self,*args):
