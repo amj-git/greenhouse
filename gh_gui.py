@@ -5,6 +5,7 @@ Main
 '''
 #Environment settings for running in Raspberry PI CLI mode
 
+
 '''
 Note: you can change between CLI and GUI mode in with "sudo raspi-config"
 
@@ -73,6 +74,9 @@ if __name__ == "__main__":
     import multiprocessing
     from time import sleep
     from gh_webserver import gh_webserver
+    from gh_io_settings import SettingsScreen
+    from k_yesnopopup import YesNoPopup
+
     
     XLABELSTR='Span '
     
@@ -343,14 +347,37 @@ if __name__ == "__main__":
             b14=Button(text='Lighting...',)
             b14.bind(on_release=self.page_jump4)
             self.menu_root.add_widget(b14)            
-            
+
+            b15=Button(text='Settings...',)
+            b15.bind(on_release=self.page_jump5)
+            self.menu_root.add_widget(b15)    
+
             b2=Button(text='Exit',)
-            b2.bind(on_release=self.quit_app)
+            b2.bind(on_release=self.confirm_quit)
             self.menu_root.add_widget(b2)
-            
+        
         def quit_app(self,*args):
-            App.get_running_app().stop()    
+            self._popup.dismiss()
+            App.get_running_app().stop()
+        
+        def dont_quit_app(self,*args):
+            self._popup.dismiss()
             
+        def confirm_quit(self,*args):
+            pop = YesNoPopup(
+                title='Exit',
+                message='Are you sure you want to exit the program ?',
+                size_hint=(0.4, 0.3),
+                pos_hint={'x':0.3, 'y':0.35}
+            )
+            pop.bind(
+                on_yes=self.quit_app,
+                on_no=self.dont_quit_app
+            )
+            
+            pop.open()
+            self._popup=pop
+                    
         def start_io(self,gio,io_desc):
             #GRID
             self.statusgrid=gh_io_status_grid(all_op_desc=io_desc)
@@ -373,6 +400,9 @@ if __name__ == "__main__":
             
         def page_jump4(self,*args):
             self.parent.current='lighting_screen'            
+            
+        def page_jump5(self,*args):
+            self.parent.current='settings_screen'
             
         def desc_click(self,*args):
             self._graph_screen.set_db(args[1])
@@ -534,12 +564,16 @@ if __name__ == "__main__":
             
             self.io_lighting_screen=LightingScreen(name='lighting_screen')
             
+            self.io_settings_screen=SettingsScreen(name='settings_screen')
+            self.webserver=None
+            
             #add in this order so status screen shows first
             self.add_widget(self.io_status_screen)
             self.add_widget(self.io_graph_screen)
             self.add_widget(self.io_sprinkler_screen)
             self.add_widget(self.io_heater_screen)
             self.add_widget(self.io_lighting_screen)
+            self.add_widget(self.io_settings_screen)
             
             
         def start_io(self):
@@ -560,13 +594,15 @@ if __name__ == "__main__":
             self.io_sprinkler_screen.set_gio(self._gio)
             self.io_heater_screen.set_gio(self._gio)
             self.io_lighting_screen.set_gio(self._gio)
+            self.io_settings_screen.set_gio(self._gio)
              
             #Start IO events running
             self._gio.start_events()
             
         def start_webserver(self):
             self.webserver=gh_webserver(self.io_status_screen.statusgrid,self._gio)
-            self.webserver.start()    
+            self.webserver.start()
+            self.io_settings_screen.set_webserver(self.webserver)    
         
         #this is the callback that is triggered by the io_q events
         def _process_io_data(self,*args):

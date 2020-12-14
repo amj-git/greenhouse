@@ -2,7 +2,7 @@
 
 #dependency: pip install flask-socketio
 
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 from flask_socketio import SocketIO,join_room, emit, send 
 from threading import Thread
 import json
@@ -25,6 +25,8 @@ class gh_webserver(Thread):
         self._log_fn=Logger.info
         self._gio=gio
         self._db_manager=self._gio.get_db_manager()
+        self.portnumber=5000
+        self.host_url='unknown'
           
 
     def term(self):
@@ -33,6 +35,9 @@ class gh_webserver(Thread):
     def __del__(self):
         #add any tidy-up here
         pass
+    
+    def get_server_ip(self):
+        return self.host_url
     
     def run(self):
         pr_cont.set_name("gh_webserver") #allows process to be idenfified in htop
@@ -49,6 +54,9 @@ class gh_webserver(Thread):
         def send_newdata(data):
             #self._log_fn("gh_webserver.on_newdata: Sending Data to Webserver")
             socketio.emit("on_newdata",json.dumps(data),broadcast=True)
+        
+
+            
             
         #----------------------    
         @socketio.on('get_table_data')
@@ -59,7 +67,7 @@ class gh_webserver(Thread):
         
         #set the callback in the statusgrid control
         self.statusgrid.set_webserver_newdata_fn(send_newdata)
-        
+                
         #----------------------
         @app.route('/graph1')
         def graph1():
@@ -77,13 +85,13 @@ class gh_webserver(Thread):
         #----------------------
         if __name__ == '__main__':
             self.socketio.run(self.app,
-                host='0.0.0.0', port=5000, debug=True, use_debugger=False,
+                host='0.0.0.0', port=self.portnumber, debug=True, use_debugger=False,
                 use_reloader=False)
         else:  #kivy mode
             from logging import Logger
             Logger.manager.loggerDict['werkzeug'] = Logger.manager.loggerDict['kivy']
             self.socketio.run(self.app,
-                host='0.0.0.0', port=5000, debug=True, use_debugger=True,
+                host='0.0.0.0', port=self.portnumber, debug=True, use_debugger=True,
                 use_reloader=False)
         #----------------------
 
