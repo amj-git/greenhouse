@@ -64,6 +64,7 @@ if __name__ == "__main__":
     from kivy.uix.anchorlayout import AnchorLayout
     from kivy.uix.textinput import TextInput
     from kivy.uix.widget import Widget
+    from kivy.uix.settings import SettingsWithSidebar
     import gh_db_manager
     from datetime import datetime, timedelta    
     from kivy.uix.screenmanager import ScreenManager, Screen
@@ -402,7 +403,8 @@ if __name__ == "__main__":
             self.parent.current='lighting_screen'            
             
         def page_jump5(self,*args):
-            self.parent.current='settings_screen'
+            App.get_running_app().open_settings()
+            #self.parent.current='settings_screen'
             
         def desc_click(self,*args):
             self._graph_screen.set_db(args[1])
@@ -516,8 +518,6 @@ if __name__ == "__main__":
                 self._xzoom=self._xzoom+1
             self.set_zoom()
             
-        def quit_app(self,*args):
-            App.get_running_app().stop()    
             
         def page_jump1(self,*args):
             self.parent.current='status_screen'
@@ -623,6 +623,7 @@ if __name__ == "__main__":
         def build(self):
             self._running=False
             self._rw=RootWidget()
+            self.settings_cls=SettingsWithSidebar
             return self._rw  
     
         def on_start(self):        

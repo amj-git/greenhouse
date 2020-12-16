@@ -33,7 +33,7 @@ class SettingsScreen(Screen):
         self.b1.bind(on_release=self.b1_click)
         self.menu_root.add_widget(self.b1)
 
-        self.b2=ToggleButton(text='Button2',state='normal')
+        self.b2=Button(text='Kivy Settings...',state='normal')
         self.b2.bind(on_release=self.b2_click)
         self.menu_root.add_widget(self.b2)
 
@@ -64,7 +64,8 @@ class SettingsScreen(Screen):
         self.parent.current='settings_sub_screen'
                 
     def b2_click(self,*args):
-        pass
+        App.get_running_app().open_settings()
+        
                 
     def b3_click(self,*args):
         pass
