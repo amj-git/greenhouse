@@ -59,13 +59,24 @@ def gh_io_main(io_q,io_ctrl):
                          period=10.1, \
                          addr='28-030897944034')
     io_manager.add_thread(io_thread3)
+
     
+    #DHT sensors on pin 17 and 27
+    io_thread7=IO_Thread_DHT22(threadname="Inside", \
+                         out_q=local_io_q, \
+                         sim_hw=sim_mode, \
+                         period=5, \
+                         pin=17 )
+    io_manager.add_thread(io_thread7)
+    
+    '''
     io_thread4=IO_Thread_DS18B20(threadname="Inside2", \
                          out_q=local_io_q, \
                          sim_hw=sim_mode, \
                          period=10.2, \
                          addr='28-00000c36cbaa')
     io_manager.add_thread(io_thread4)
+    '''
     
     io_thread5=IO_Thread_DS18B20(threadname="Control Box", \
                          out_q=local_io_q, \
@@ -73,6 +84,19 @@ def gh_io_main(io_q,io_ctrl):
                          period=10.3, \
                          addr='28-011925cbf4fb')
     io_manager.add_thread(io_thread5)
+
+
+    #Heater on pin 25.  Fan on pin 24
+    io_thread_heater=IO_Thread_Heater(threadname="Heater", \
+                         out_q=local_io_q, \
+                         sim_hw=sim_mode, \
+                         period=5.1, \
+                         heat_pin=25, \
+                         fan_pin=24, \
+                         target_tname='Inside', \
+                         target_pname='Temp' )
+    io_manager.add_thread(io_thread_heater) 
+
     
     io_thread6=IO_Thread_BH1750(threadname="Inside Light Sensor", \
                          out_q=local_io_q, \
@@ -86,14 +110,17 @@ def gh_io_main(io_q,io_ctrl):
                          sim_hw=sim_mode, \
                          addr=0x5c )
     io_manager.add_thread(io_thread6b)    
-    
-    #DHT sensors on pin 17 and 27
-    io_thread7=IO_Thread_DHT22(threadname="Inside", \
+
+    #Light Controller on pin GPIO18.
+    io_thread_light_ctrl1=IO_Thread_Light_Ctrl(threadname="Grow Light", \
                          out_q=local_io_q, \
                          sim_hw=sim_mode, \
-                         period=5, \
-                         pin=17 )
-    io_manager.add_thread(io_thread7)
+                         period=5.32, \
+                         light_ctrl_pin=18, \
+                         target_tname='Plant Light Sensor', \
+                         target_pname='Light', \
+                         slave_thread=io_thread6b )
+    io_manager.add_thread(io_thread_light_ctrl1)    
     
     #Moisture sensors on pin 10,9,11
     #ref is on pin 12
@@ -116,28 +143,6 @@ def gh_io_main(io_q,io_ctrl):
                          valve_pins=[13,19,26], \
                          valve_names=['hose','sprink1','sprink2'] )
     io_manager.add_thread(io_thread_sprink) 
-
-    #Heater on pin 25.  Fan on pin 24
-    io_thread_heater=IO_Thread_Heater(threadname="Heater", \
-                         out_q=local_io_q, \
-                         sim_hw=sim_mode, \
-                         period=5.1, \
-                         heat_pin=25, \
-                         fan_pin=24, \
-                         target_tname='Inside', \
-                         target_pname='Temp' )
-    io_manager.add_thread(io_thread_heater) 
-    
-    #Light Controller on pin GPIO18.
-    io_thread_light_ctrl1=IO_Thread_Light_Ctrl(threadname="Grow Light", \
-                         out_q=local_io_q, \
-                         sim_hw=sim_mode, \
-                         period=5.32, \
-                         light_ctrl_pin=18, \
-                         target_tname='Plant Light Sensor', \
-                         target_pname='Light', \
-                         slave_thread=io_thread6b )
-#    io_manager.add_thread(io_thread_light_ctrl1)    
     
     '''
     #demo of a thread that uses data from another thread
@@ -180,10 +185,10 @@ def gh_io_main(io_q,io_ctrl):
                 iob=io_manager.get_iob()  #get the IO buffer
             if(cmd[:6]=='SPRINK'):
                 io_thread_sprink.command(cmd,data)
-   #         if(cmd[:6]=='HEATER'):
-    #            response=io_thread_heater.command(cmd,data)
-    #            if response is not None:
-    #                io_ctrl.send(response)
+            if(cmd[:6]=='HEATER'):
+                response=io_thread_heater.command(cmd,data)
+                if response is not None:
+                    io_ctrl.send(response)
     #        if(cmd[:10]=='LIGHT_CTRL'):
     #            response=io_thread_light_ctrl1.command(cmd,data)
     #            if response is not None:
