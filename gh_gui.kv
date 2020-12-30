@@ -4,11 +4,15 @@
     do_scroll_x: False
     scroll_type: ['bars']
     container: cont_grid
-    bar_width: '50dp'
+    bar_width: '55dp'
+    bar_pos_y: 'left'
+    bar_color: [.7, .7, .7, .9]
+    bar_inactive_color: [.7, .7, .7, .9]
     BoxLayout:
         id: cont_grid
         orientation: 'vertical'
-        size_hint_y: None
+        size_hint_y: None        
+        padding: [dp(55),0,0,0]     #avoid the scrollbar
         height: self.minimum_height  
 
 <gh_SettingsInterface>:
