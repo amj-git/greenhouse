@@ -155,7 +155,7 @@ class IO_Thread_Light_Ctrl(IO_Thread):
             self._target_light=0  #set low value so it's obvious it's switched off
             self._set_light_state(0,False)
         else:
-            #Get the last temperature sensor reading
+            #Get the last light sensor reading
             current_light=None
             with self._iob.get_lock():
                 n=len(self._target_buf)
