@@ -1,0 +1,26 @@
+[
+    { "type": "title",
+      "title": "Network" },
+
+    { "type": "string",
+      "title": "IP Address",
+      "desc": "WiFi IP Address",
+      "section": "Network",
+      "key": "IP" },
+      
+    { "type": "string",
+      "title": "SSID",
+      "desc": "WiFi SSID",
+      "section": "Network",
+      "key": "SSID" },
+      
+    {
+    "type": "dynamic_options",
+    "title": "Test Dyn Opt",
+    "desc": "Test of Dynamic Options",
+    "section": "Network",
+    "key": "dyntest",
+    "function_string": "gh_io_settings.get_test_options"
+    }
+     
+]

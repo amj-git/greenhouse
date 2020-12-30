@@ -4,6 +4,7 @@
 Main
 '''
 #Environment settings for running in Raspberry PI CLI mode
+from virtualenv.create.via_global_ref.builtin import via_global_self_do
 
 
 '''
@@ -640,9 +641,18 @@ if __name__ == "__main__":
             if self._running:  #prevent it running twice due to multiple clicks
                 self._rw.stop_io()
                 self._running=False
+                
+        def build_config(self,config):
+            self._gh_config=gh_io_settings.gh_config(config)
+            
+        def build_settings(self,settings):
+            self._gh_config.build_settings(settings)            
        
+    #Set up process tracking
     if platform.system()=='Linux':
         multiprocessing.set_start_method('fork')
     pr_cont.set_proctitle('gh_main process') #allows process to be idenfified in htop
     pr_cont.set_name('kivy main') #allows process to be idenfified in htop
+    
+    #Run the app
     gh_gui_app().run()

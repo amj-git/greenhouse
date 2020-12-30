@@ -1,5 +1,11 @@
 '''
-Settings Screen
+Settings Screens
+
+Based on Kivy settings framework see https://kivy.org/doc/stable/api-kivy.app.html
+
+The screens are customised to match the menus and to allow easier
+scrolling with a resistive touchscreen on the RPI
+
 '''
 
 from kivy.app import App
@@ -13,17 +19,44 @@ from kivy.uix.textinput import TextInput
 from kivy.uix.widget import Widget
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.uix.settings import Settings, ContentPanel, MenuSidebar,\
-    InterfaceWithTabbedPanel, InterfaceWithSidebar, SettingSidebarLabel
+    InterfaceWithTabbedPanel, InterfaceWithSidebar, SettingSidebarLabel, \
+    SettingOptions
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.tabbedpanel import TabbedPanelHeader
 from kivy.uix.floatlayout import FloatLayout
+from kivy.logger import Logger
 from kivy.properties import ObjectProperty, StringProperty, ListProperty, \
 BooleanProperty, NumericProperty, DictProperty
+import importlib
 
 fsize1='22sp'
 
+#START SETTINGS GUI DEFINITIONS------------------------
+
 #Note that the Kivy classes below are set up in gh_gui.kv
 
+class SettingDynamicOptions(SettingOptions):
+    '''Implementation of an option list that creates the items in the possible
+    options list by calling an external method, that should be defined in
+    the settings class.
+    '''
+    
+    function_string = StringProperty()
+    '''The function's name to call each time the list should be updated.
+    It should return a list of strings, to be used for the options.
+    '''
+    
+    def _create_popup(self, instance):
+        # Update the options
+        mod_name, func_name = self.function_string.rsplit('.',1)
+        mod = importlib.import_module(mod_name)
+        func = getattr(mod, func_name)
+        self.options = func()
+    
+        # Call the parent __init__
+        super(SettingDynamicOptions, self)._create_popup(instance)
+
+#settings panel based on the Kivy settings framework with some customisation
 class gh_SettingsPanel(Settings):
  
     __events__ = ('on_close', )
@@ -31,6 +64,7 @@ class gh_SettingsPanel(Settings):
     def __init__(self, *args, **kwargs):
         self.interface_cls = gh_SettingsInterface
         super(gh_SettingsPanel, self).__init__(*args, **kwargs)
+        self.register_type('dynamic_options', SettingDynamicOptions)
  
     def on_close(self):
         Logger.info("main.py: MySettingsWithTabbedPanel.on_close")
@@ -79,6 +113,7 @@ class gh_MenuSidebar(FloatLayout):
                 button.selected = False
 
 
+#unconventional naming here as Kivy would not accept gh_ContentPanel as the name
 class ContPanel_gh(ScrollView):
     panels = DictProperty({})
     container = ObjectProperty()
@@ -113,7 +148,33 @@ class ContPanel_gh(ScrollView):
 
 class gh_SettingSidebarLabel(SettingSidebarLabel):
     '''Inherit from settings.py
+    Note the setup in gh_gui.kv is customised
     '''
+
+#END SETTINGS GUI DEFINITIONS------------------------
+
+#START CONFIG FUNCTIONS---------------------------
+def get_test_options():
+    op=['option 1','option 2','option 3']
+    return op
+
+class gh_config:
+    def __init__(self,config):
+        self._config=config
+        self.setdefaults()
+        
+    def setdefaults(self):
+        self._config.setdefaults('Network', {
+                                'IP':'0.0.0.0',
+                                'SSID':'<No SSID>',
+                                'dyntest':'<not set>'
+                                })
+        
+    def build_settings(self,settings):
+        #see .json files for details
+        settings.add_json_panel('Network',self._config,'settings_net.json')
+
+#END CONFIG FUNCTIONS---------------------------
 
 class SettingsScreen(Screen):
     def __init__(self, **kwargs):
