@@ -75,9 +75,14 @@ if __name__ == "__main__":
     import multiprocessing
     from time import sleep
     from gh_webserver import gh_webserver
+    import gh_io_settings
     from gh_io_settings import SettingsScreen
     from k_yesnopopup import YesNoPopup
 
+    
+    #Load the main kv definition file
+    from kivy.lang.builder import Builder
+    Builder.load_file('gh_gui.kv')
     
     XLABELSTR='Span '
     
@@ -623,7 +628,7 @@ if __name__ == "__main__":
         def build(self):
             self._running=False
             self._rw=RootWidget()
-            self.settings_cls=SettingsWithSidebar
+            self.settings_cls=gh_io_settings.gh_SettingsPanel #custom panel see gh_io_settings.py
             return self._rw  
     
         def on_start(self):        

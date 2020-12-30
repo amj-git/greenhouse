@@ -12,8 +12,108 @@ from kivy.uix.label import Label
 from kivy.uix.textinput import TextInput
 from kivy.uix.widget import Widget
 from kivy.uix.screenmanager import ScreenManager, Screen
+from kivy.uix.settings import Settings, ContentPanel, MenuSidebar,\
+    InterfaceWithTabbedPanel, InterfaceWithSidebar, SettingSidebarLabel
+from kivy.uix.scrollview import ScrollView
+from kivy.uix.tabbedpanel import TabbedPanelHeader
+from kivy.uix.floatlayout import FloatLayout
+from kivy.properties import ObjectProperty, StringProperty, ListProperty, \
+BooleanProperty, NumericProperty, DictProperty
 
 fsize1='22sp'
+
+#Note that the Kivy classes below are set up in gh_gui.kv
+
+class gh_SettingsPanel(Settings):
+ 
+    __events__ = ('on_close', )
+
+    def __init__(self, *args, **kwargs):
+        self.interface_cls = gh_SettingsInterface
+        super(gh_SettingsPanel, self).__init__(*args, **kwargs)
+ 
+    def on_close(self):
+        Logger.info("main.py: MySettingsWithTabbedPanel.on_close")
+
+    def on_config_change(self, config, section, key, value):
+        Logger.info(
+            "main.py: MySettingsWithTabbedPanel.on_config_change: "
+            "{0}, {1}, {2}, {3}".format(config, section, key, value))
+        
+        
+#Custom settings interface
+class gh_SettingsInterface(BoxLayout):
+    menu = ObjectProperty()
+    content = ObjectProperty()   
+    
+    __events__ = ('on_close', )
+
+    def __init__(self, *args, **kwargs):
+        super(gh_SettingsInterface, self).__init__(*args, **kwargs)
+        self.menu.close_button.bind(on_release=lambda j: self.dispatch('on_close'))
+
+    def add_panel(self, panel, name, uid):
+        self.menu.add_item(name, uid)
+        self.content.add_panel(panel, name, uid)
+
+    def on_close(self, *args):
+        pass
+
+
+#custom settings sidebar (based on MenuSidebar from settings.py)
+class gh_MenuSidebar(FloatLayout):
+    selected_uid = NumericProperty(0)
+    buttons_layout = ObjectProperty(None)
+    close_button = ObjectProperty(None)
+
+    def add_item(self, name, uid):
+        label = gh_SettingSidebarLabel(text=name, uid=uid, menu=self)
+        if len(self.buttons_layout.children) == 0:
+            label.selected = True
+        if self.buttons_layout is not None:
+            self.buttons_layout.add_widget(label)
+
+    def on_selected_uid(self, *args):
+        for button in self.buttons_layout.children:
+            if button.uid != self.selected_uid:
+                button.selected = False
+
+
+class ContPanel_gh(ScrollView):
+    panels = DictProperty({})
+    container = ObjectProperty()
+    current_panel = ObjectProperty(None)
+    current_uid = NumericProperty(0)
+
+    def add_panel(self, panel, name, uid):
+        self.panels[uid] = panel
+        if not self.current_uid:
+            self.current_uid = uid
+
+    def on_current_uid(self, *args):
+        uid = self.current_uid
+        if uid in self.panels:
+            if self.current_panel is not None:
+                self.remove_widget(self.current_panel)
+            new_panel = self.panels[uid]
+            self.add_widget(new_panel)
+            self.current_panel = new_panel
+            return True
+        return False  # New uid doesn't exist
+
+    def add_widget(self, widget):
+        if self.container is None:
+            super(ContPanel_gh, self).add_widget(widget)
+        else:
+            self.container.add_widget(widget)
+
+    def remove_widget(self, widget):
+        self.container.remove_widget(widget)
+
+
+class gh_SettingSidebarLabel(SettingSidebarLabel):
+    '''Inherit from settings.py
+    '''
 
 class SettingsScreen(Screen):
     def __init__(self, **kwargs):

@@ -1,0 +1,62 @@
+#<KvLang>
+
+<ContPanel_gh>:
+    do_scroll_x: False
+    scroll_type: ['bars']
+    container: cont_grid
+    bar_width: '50dp'
+    BoxLayout:
+        id: cont_grid
+        orientation: 'vertical'
+        size_hint_y: None
+        height: self.minimum_height  
+
+<gh_SettingsInterface>:
+    orientation: 'horizontal'
+    content: cont_panel
+    menu: menu
+    ContPanel_gh:
+        id: cont_panel
+        current_uid: menu.selected_uid
+    gh_MenuSidebar:
+        id: menu
+        
+<gh_MenuSidebar>:   
+    buttons_layout: menu
+    close_button: button
+    size_hint: (0.3,1)
+    GridLayout:
+        pos: root.pos
+        cols: 1
+        id: menu
+        orientation: 'vertical'
+        padding: 0
+        canvas.after:
+            Color:
+                rgb: .2, .2, .2
+            Rectangle:
+                pos: self.right - 1, self.y
+                size: 1, self.height
+
+    Button:
+        text: 'Back'
+        id: button
+        size_hint: None, None
+        width: root.width
+        height: max(100, self.texture_size[1] + dp(20))
+        pos: root.x , root.y
+        font_size: '15sp'
+     
+<gh_SettingSidebarLabel>:
+    size_hint: 1, None
+    text_size: self.width - 32, None
+    height: self.texture_size[1] + dp(60)
+    font_size: '20sp'
+    canvas.before:
+        Color:
+            rgba: 47 / 255., 167 / 255., 212 / 255., int(self.selected)
+        Rectangle:
+            pos: self.pos
+            size: self.size
+     
+#</KvLang>
