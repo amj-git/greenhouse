@@ -154,6 +154,7 @@ class gh_SettingSidebarLabel(SettingSidebarLabel):
 #END SETTINGS GUI DEFINITIONS------------------------
 
 #START CONFIG FUNCTIONS---------------------------
+#example of how to dynamically provide options
 def get_test_options():
     op=['option 1','option 2','option 3']
     return op
