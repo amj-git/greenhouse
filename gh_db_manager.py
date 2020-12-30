@@ -188,7 +188,14 @@ class param_db:
         data=(timestamp_ms,self.compress_val(val))
         with self._lock:
             #tstart=datetime.now()
-            self._db.execute('INSERT INTO raw_data VALUES (?,?)',data)
+            
+            try:
+                self._db.execute('INSERT INTO raw_data VALUES (?,?)',data)
+            except sqlite3.Error as er:
+                #catch failures to write - commonly occurs when two timestamps are the same
+                print("gh_db_manager.write_value db=",self._dbname," data=",data)
+                print("sqlite3 Error: ",er)
+                
             self._commit_if_due(timestamp_ms)
             #tstop=datetime.now()
             #tdelta=(tstop-tstart).total_seconds()
