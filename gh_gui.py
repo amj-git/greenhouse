@@ -4,8 +4,6 @@
 Main
 '''
 #Environment settings for running in Raspberry PI CLI mode
-from virtualenv.create.via_global_ref.builtin import via_global_self_do
-
 
 '''
 Note: you can change between CLI and GUI mode in with "sudo raspi-config"
