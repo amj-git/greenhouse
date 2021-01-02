@@ -1,0 +1,19 @@
+[
+    { "type": "title",
+      "title": "Lighting" },
+
+    { "type": "numeric",
+      "title": "Boost Target",
+      "desc": "Lighting Boost Target Brightness in Lux",
+      "section": "Lighting",
+      "key": "BOOST_TARGET" },
+    
+    { "type": "numeric",
+      "title": "Boost Time",
+      "desc": "Lighting Boost Time in Minutes",
+      "section": "Lighting",
+      "key": "BOOST_MINUTES" }    
+      
+    
+     
+]

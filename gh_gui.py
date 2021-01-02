@@ -253,32 +253,15 @@ if __name__ == "__main__":
     class LightingScreen(Screen):
         def __init__(self, **kwargs):
             super(LightingScreen, self).__init__(**kwargs)
+            self._gh_config=App.get_running_app()._gh_config
             
-                        
-            #ROOT STRUCTURE
-            self.root_box=BoxLayout(orientation='horizontal')
-            self.add_widget(self.root_box)
-            self.non_menu_root=BoxLayout()
-            self.root_box.add_widget(self.non_menu_root)
-            self.menu_root=BoxLayout(orientation='vertical',size_hint=(0.3,1))
-            self.root_box.add_widget(self.menu_root)
-                                         
-            #MENU
-            self.b1=ToggleButton(text='LIGHT OFF',state='normal')
-            self.b1.bind(on_release=self.heateroffclick)
-            self.menu_root.add_widget(self.b1)
-
-            self.b2=ToggleButton(text='LIGHT AUTO',state='normal')
-            self.b2.bind(on_release=self.heaterautoclick)
-            self.menu_root.add_widget(self.b2)
-
-            self.b3=ToggleButton(text='LIGHT BOOST',state='normal')
-            self.b3.bind(on_release=self.heaterboostclick)
-            self.menu_root.add_widget(self.b3)
+            menu_root=ObjectProperty(None)
+            non_menu_root=ObjectProperty(None)
+            b1=ObjectProperty(None)
+            b2=ObjectProperty(None)
+            b3=ObjectProperty(None)
+            b99=ObjectProperty(None)
             
-            b99=Button(text='Back',)
-            b99.bind(on_release=self.page_jump1)
-            self.menu_root.add_widget(b99)
                         
         def set_gio(self,gio):
             self._gio=gio
@@ -301,17 +284,23 @@ if __name__ == "__main__":
                        
         def heateroffclick(self,*args):
             self._gio.send_io_command('LIGHT_CTRL:MODE','OFF')
+            self._gh_config._config.set('Lighting','MODE','OFF') #save config
+            self._gh_config._config.write()
             self.get_mode()
                     
         def heaterautoclick(self,*args):
             self._gio.send_io_command('LIGHT_CTRL:MODE','AUTO')
+            self._gh_config._config.set('Lighting','MODE','AUTO') #save config
+            self._gh_config._config.write()
             self.get_mode()
                     
         def heaterboostclick(self,*args):
             self._gio.send_io_command('LIGHT_CTRL:MODE','BOOST')
+            #don't save boost mode
             self.get_mode()
             
-            
+        def on_enter(self):
+            self.get_mode()            
                 
     
     class IOStatusScreen(Screen):
@@ -319,38 +308,14 @@ if __name__ == "__main__":
             self._graph_screen=kwargs.pop('graph_screen',None)
             super(IOStatusScreen, self).__init__(**kwargs)
             
-            #ROOT STRUCTURE
-            self.root_box=BoxLayout(orientation='horizontal')
-            self.add_widget(self.root_box)
-            self.non_menu_root=BoxLayout()
-            self.root_box.add_widget(self.non_menu_root)
-            self.menu_root=BoxLayout(orientation='vertical',size_hint=(0.3,1))
-            self.root_box.add_widget(self.menu_root)
-                                         
-            #MENU
-            b1=Button(text='Graph...',)
-            b1.bind(on_release=self.page_jump1)
-            self.menu_root.add_widget(b1)
-            
-            b12=Button(text='Sprinkler...',)
-            b12.bind(on_release=self.page_jump2)
-            self.menu_root.add_widget(b12)
-
-            b13=Button(text='Heater...',)
-            b13.bind(on_release=self.page_jump3)
-            self.menu_root.add_widget(b13)
-            
-            b14=Button(text='Lighting...',)
-            b14.bind(on_release=self.page_jump4)
-            self.menu_root.add_widget(b14)            
-
-            b15=Button(text='Settings...',)
-            b15.bind(on_release=self.page_jump5)
-            self.menu_root.add_widget(b15)    
-
-            b2=Button(text='Exit',)
-            b2.bind(on_release=self.confirm_quit)
-            self.menu_root.add_widget(b2)
+            menu_root=ObjectProperty(None)
+            non_menu_root=ObjectProperty(None)
+            b1=ObjectProperty(None)
+            b12=ObjectProperty(None)
+            b13=ObjectProperty(None)
+            b14=ObjectProperty(None)
+            b15=ObjectProperty(None)
+            b2=ObjectProperty(None)
         
         def quit_app(self,*args):
             self._popup.dismiss()

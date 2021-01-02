@@ -79,6 +79,9 @@ class gh_SettingsPanel(Settings):
         #Action the relevant changes
         if section=='Heater':
             self._gh_config.push_heater_config()
+            
+        if section=='Lighting':
+            self._gh_config.push_lighting_config()            
         
         
 #Custom settings interface
@@ -188,10 +191,19 @@ class gh_config:
                                 'MODE':'AUTO'
                                 })
         
+        self._config.setdefaults('Lighting', {
+                                'BOOST_MINUTES':'30',
+                                'BOOST_TARGET':'10000',
+                                'MODE':'AUTO'
+                                })
+        
+        
         
     def push_all_config(self):
         self.push_heater_config()
         self.push_heater_mode()
+        self.push_lighting_config()
+        self.push_lighting_mode()
         
     def push_heater_config(self):
         boost_params=str(self._config.getfloat('Heater','BOOST_TARGET'))
@@ -202,11 +214,21 @@ class gh_config:
         mode=self._config.get('Heater','MODE')
         self._gio.send_io_command('HEATER:MODE',mode)  #command,data
         
+    def push_lighting_config(self):
+        boost_params=str(self._config.getfloat('Lighting','BOOST_TARGET'))
+        boost_params=boost_params+","+str(self._config.getfloat('Lighting','BOOST_MINUTES'))
+        self._gio.send_io_command('LIGHT_CTRL:BOOST_PARAMS',boost_params)  #command,data
+        
+    def push_lighting_mode(self):
+        mode=self._config.get('Lighting','MODE')
+        self._gio.send_io_command('LIGHT_CTRL:MODE',mode)  #command,data        
+        
         
     def build_settings(self,settings):
         #see .json files for details
         settings.add_json_panel('Network',self._config,'settings_net.json')
         settings.add_json_panel('Heater',self._config,'settings_heater.json')
+        settings.add_json_panel('Lighting',self._config,'settings_lighting.json')
 
 #END CONFIG FUNCTIONS---------------------------
 

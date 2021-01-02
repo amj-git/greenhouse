@@ -98,7 +98,7 @@
                 font_size: menusize1
                 halign: 'center'
                 on_release: root.heaterautoclick()
-                background_color: (1,0,0,1)
+                background_color: (1,0.65,0,1)
                 background_down: 'shapes/but1.png'
                 background_normal: 'shapes/but2.png'
             ToggleButton:
@@ -118,7 +118,120 @@
                 halign: 'center'
                 on_release: root.page_jump1()
                 
-                                    
+<LightingScreen>:
+    menu_root:menu_root
+    non_menu_root:non_menu_root
+    b1:b1
+    b2:b2
+    b3:b3
+    b99:b99
+    BoxLayout:
+        id: root_box
+        orientation: 'horizontal'
+        BoxLayout:
+            id: non_menu_root
+        BoxLayout:
+            id: menu_root
+            orientation: 'vertical'
+            size_hint: (0.3,1)        
+            ToggleButton:
+                id: b1
+                text:'Light\nOFF'
+                state: 'normal'
+                font_size: menusize1
+                halign: 'center'
+                on_release: root.heateroffclick()
+                background_color: (0,0,0.8,1)
+                background_down: 'shapes/but1.png'
+                background_normal: 'shapes/but2.png'
+            ToggleButton:
+                id: b2
+                text: 'Light\nAUTO'
+                state: 'normal'
+                font_size: menusize1
+                halign: 'center'
+                on_release: root.heaterautoclick()
+                background_color: (1,0.65,0,1)
+                background_down: 'shapes/but1.png'
+                background_normal: 'shapes/but2.png'
+            ToggleButton:
+                id: b3
+                text:'Light\nBOOST'
+                state: 'normal'
+                font_size: menusize1
+                halign: 'center'
+                on_release: root.heaterboostclick()
+                background_color: (1,0,0,1)
+                background_down: 'shapes/but1.png'
+                background_normal: 'shapes/but2.png'
+            Button:
+                id: b99
+                text:'Back'
+                font_size: menusize1
+                halign: 'center'
+                on_release: root.page_jump1()                
+                
+<IOStatusScreen>:
+    menu_root:menu_root
+    non_menu_root:non_menu_root
+    b1:b1
+    b12:b12
+    b13:b13
+    b14:b14
+    b15:b15
+    b2:b2
+    
+    BoxLayout:
+        id: root_box
+        orientation: 'horizontal'
+        BoxLayout:
+            id: non_menu_root
+        BoxLayout:
+            id: menu_root
+            orientation: 'vertical'
+            size_hint: (0.3,1)        
+            Button:
+                id: b1
+                text:'Graph...'
+                state: 'normal'
+                font_size: menusize1
+                halign: 'center'
+                on_release: root.page_jump1()
+            Button:
+                id: b12
+                text:'Sprinkler...'
+                state: 'normal'
+                font_size: menusize1
+                halign: 'center'
+                on_release: root.page_jump2()
+            Button:
+                id: b13
+                text:'Heater...'
+                state: 'normal'
+                font_size: menusize1
+                halign: 'center'
+                on_release: root.page_jump3()
+            Button:
+                id: b14
+                text:'Lighting...'
+                state: 'normal'
+                font_size: menusize1
+                halign: 'center'
+                on_release: root.page_jump4()
+            Button:
+                id: b15
+                text:'Settings...'
+                state: 'normal'
+                font_size: menusize1
+                halign: 'center'
+                on_release: root.page_jump5()
+            Button:
+                id: b2
+                text:'Exit'
+                state: 'normal'
+                font_size: menusize1
+                halign: 'center'
+                on_release: root.confirm_quit()            
 
      
 #</KvLang>
