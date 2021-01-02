@@ -1,5 +1,7 @@
 #<KvLang>
 
+#:set menusize1 "30sp"
+
 <ContPanel_gh>:
     do_scroll_x: False
     scroll_type: ['bars']
@@ -62,5 +64,61 @@
         Rectangle:
             pos: self.pos
             size: self.size
+            
+<HeaterScreen>:
+    menu_root:menu_root
+    non_menu_root:non_menu_root
+    b1:b1
+    b2:b2
+    b3:b3
+    b99:b99
+    BoxLayout:
+        id: root_box
+        orientation: 'horizontal'
+        BoxLayout:
+            id: non_menu_root
+        BoxLayout:
+            id: menu_root
+            orientation: 'vertical'
+            size_hint: (0.3,1)        
+            ToggleButton:
+                id: b1
+                text:'Heater\nOFF'
+                state: 'normal'
+                font_size: menusize1
+                halign: 'center'
+                on_release: root.heateroffclick()
+                background_color: (0,0,0.8,1)
+                background_down: 'shapes/but1.png'
+                background_normal: 'shapes/but2.png'
+            ToggleButton:
+                id: b2
+                text: 'Heater\nAUTO'
+                state: 'normal'
+                font_size: menusize1
+                halign: 'center'
+                on_release: root.heaterautoclick()
+                background_color: (1,0,0,1)
+                background_down: 'shapes/but1.png'
+                background_normal: 'shapes/but2.png'
+            ToggleButton:
+                id: b3
+                text:'Heater\nBOOST'
+                state: 'normal'
+                font_size: menusize1
+                halign: 'center'
+                on_release: root.heaterboostclick()
+                background_color: (1,0,0,1)
+                background_down: 'shapes/but1.png'
+                background_normal: 'shapes/but2.png'
+            Button:
+                id: b99
+                text:'Back'
+                font_size: menusize1
+                halign: 'center'
+                on_release: root.page_jump1()
+                
+                                    
+
      
 #</KvLang>

@@ -65,14 +65,20 @@ class gh_SettingsPanel(Settings):
         self.interface_cls = gh_SettingsInterface
         super(gh_SettingsPanel, self).__init__(*args, **kwargs)
         self.register_type('dynamic_options', SettingDynamicOptions)
+        self._gh_config=App.get_running_app()._gh_config
  
     def on_close(self):
         Logger.info("main.py: MySettingsWithTabbedPanel.on_close")
+
 
     def on_config_change(self, config, section, key, value):
         Logger.info(
             "main.py: MySettingsWithTabbedPanel.on_config_change: "
             "{0}, {1}, {2}, {3}".format(config, section, key, value))
+        
+        #Action the relevant changes
+        if section=='Heater':
+            self._gh_config.push_heater_config()
         
         
 #Custom settings interface
@@ -162,7 +168,11 @@ def get_test_options():
 class gh_config:
     def __init__(self,config):
         self._config=config
+        self._gio=None
         self.setdefaults()
+        
+    def set_gio(self,gio):
+        self._gio=gio
         
     def setdefaults(self):
         self._config.setdefaults('Network', {
@@ -171,9 +181,32 @@ class gh_config:
                                 'dyntest':'<not set>'
                                 })
         
+        
+        self._config.setdefaults('Heater', {
+                                'BOOST_MINUTES':'60',
+                                'BOOST_TARGET':'20',
+                                'MODE':'AUTO'
+                                })
+        
+        
+    def push_all_config(self):
+        self.push_heater_config()
+        self.push_heater_mode()
+        
+    def push_heater_config(self):
+        boost_params=str(self._config.getfloat('Heater','BOOST_TARGET'))
+        boost_params=boost_params+","+str(self._config.getfloat('Heater','BOOST_MINUTES'))
+        self._gio.send_io_command('HEATER:BOOST_PARAMS',boost_params)  #command,data
+        
+    def push_heater_mode(self):
+        mode=self._config.get('Heater','MODE')
+        self._gio.send_io_command('HEATER:MODE',mode)  #command,data
+        
+        
     def build_settings(self,settings):
         #see .json files for details
         settings.add_json_panel('Network',self._config,'settings_net.json')
+        settings.add_json_panel('Heater',self._config,'settings_heater.json')
 
 #END CONFIG FUNCTIONS---------------------------
 

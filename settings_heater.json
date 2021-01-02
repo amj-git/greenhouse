@@ -1,0 +1,19 @@
+[
+    { "type": "title",
+      "title": "Heater" },
+
+    { "type": "numeric",
+      "title": "Boost Temperature",
+      "desc": "Heater Boost Temperature in Deg C",
+      "section": "Heater",
+      "key": "BOOST_TARGET" },
+    
+    { "type": "numeric",
+      "title": "Boost Time",
+      "desc": "Heater Boost Time in Minutes",
+      "section": "Heater",
+      "key": "BOOST_MINUTES" }    
+      
+    
+     
+]

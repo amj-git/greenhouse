@@ -189,10 +189,10 @@ def gh_io_main(io_q,io_ctrl):
                 response=io_thread_heater.command(cmd,data)
                 if response is not None:
                     io_ctrl.send(response)
-    #        if(cmd[:10]=='LIGHT_CTRL'):
-    #            response=io_thread_light_ctrl1.command(cmd,data)
-    #            if response is not None:
-    #                io_ctrl.send(response)                    
+            if(cmd[:10]=='LIGHT_CTRL'):
+                response=io_thread_light_ctrl1.command(cmd,data)
+                if response is not None:
+                    io_ctrl.send(response)                    
                 
         try:
             op_data=local_io_q.get(timeout=0.1) #Block here max 100ms

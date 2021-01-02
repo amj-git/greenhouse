@@ -77,6 +77,7 @@ if __name__ == "__main__":
     import gh_io_settings
     from gh_io_settings import SettingsScreen
     from k_yesnopopup import YesNoPopup
+    from kivy.properties import ObjectProperty
 
     
     #Load the main kv definition file
@@ -199,32 +200,16 @@ if __name__ == "__main__":
     class HeaterScreen(Screen):
         def __init__(self, **kwargs):
             super(HeaterScreen, self).__init__(**kwargs)
-            
-                        
-            #ROOT STRUCTURE
-            self.root_box=BoxLayout(orientation='horizontal')
-            self.add_widget(self.root_box)
-            self.non_menu_root=BoxLayout()
-            self.root_box.add_widget(self.non_menu_root)
-            self.menu_root=BoxLayout(orientation='vertical',size_hint=(0.3,1))
-            self.root_box.add_widget(self.menu_root)
-                                         
-            #MENU
-            self.b1=ToggleButton(text='HEATER OFF',state='normal')
-            self.b1.bind(on_release=self.heateroffclick)
-            self.menu_root.add_widget(self.b1)
-
-            self.b2=ToggleButton(text='HEATER AUTO',state='normal')
-            self.b2.bind(on_release=self.heaterautoclick)
-            self.menu_root.add_widget(self.b2)
-
-            self.b3=ToggleButton(text='HEATER BOOST',state='normal')
-            self.b3.bind(on_release=self.heaterboostclick)
-            self.menu_root.add_widget(self.b3)
-            
-            b99=Button(text='Back',)
-            b99.bind(on_release=self.page_jump1)
-            self.menu_root.add_widget(b99)
+            self._gh_config=App.get_running_app()._gh_config
+             
+            menu_root=ObjectProperty(None)
+            non_menu_root=ObjectProperty(None)
+            b1=ObjectProperty(None)
+            b2=ObjectProperty(None)
+            b3=ObjectProperty(None)
+            b99=ObjectProperty(None)
+             
+            #Layout defined in gh_gui.kv
                         
         def set_gio(self,gio):
             self._gio=gio
@@ -247,17 +232,23 @@ if __name__ == "__main__":
                        
         def heateroffclick(self,*args):
             self._gio.send_io_command('HEATER:MODE','OFF')
+            self._gh_config._config.set('Heater','MODE','OFF') #save config
+            self._gh_config._config.write()
             self.get_mode()
                     
         def heaterautoclick(self,*args):
             self._gio.send_io_command('HEATER:MODE','AUTO')
+            self._gh_config._config.set('Heater','MODE','AUTO') #save config
+            self._gh_config._config.write()
             self.get_mode()
                     
         def heaterboostclick(self,*args):
             self._gio.send_io_command('HEATER:MODE','BOOST')
+            #DO NOT SAVE BOOST CONFIG - IT IS A TEMPORARY MODE
             self.get_mode()
             
-    
+        def on_enter(self):
+            self.get_mode()
          
     class LightingScreen(Screen):
         def __init__(self, **kwargs):
@@ -582,11 +573,13 @@ if __name__ == "__main__":
             self.add_widget(self.io_settings_screen)
             
             
-        def start_io(self):
+        def start_io(self,config):
             self._gio=gh_io_dispatcher()
+            self._gh_config=config
+            self._gh_config.set_gio(self._gio)
             self._gio.start_io()
-                                       
-                                 
+            self._gh_config.push_all_config()
+                                                                       
             io_desc=self._gio.io_query('OPDESC?',0,15)  #command,data,timeout - need long timeout if using spawn instead of fork
             Logger.info("init_io: IO Descriptions:")
             if io_desc is not None:
@@ -631,7 +624,7 @@ if __name__ == "__main__":
             return self._rw  
     
         def on_start(self):        
-            self._rw.start_io()
+            self._rw.start_io(self._gh_config)
             self._rw.start_webserver()
             self._running=True
         
@@ -644,7 +637,7 @@ if __name__ == "__main__":
             self._gh_config=gh_io_settings.gh_config(config)
             
         def build_settings(self,settings):
-            self._gh_config.build_settings(settings)            
+            self._gh_config.build_settings(settings)  
        
     #Set up process tracking
     if platform.system()=='Linux':
