@@ -239,6 +239,12 @@ class IO_Thread_Heater(IO_Thread):
                 if self._mode!='BOOST':
                     self._mode_before_boost=self._mode
                 self._boost_end_time=datetime.datetime.now()+datetime.timedelta(minutes=self._boost_minutes)
+            if data=='OFF':
+                #expire the heater delay so it goes off right away
+                self._last_heat_on_time=self._last_heat_on_time-datetime.timedelta(seconds=self._min_heat_on_time)
+            if data=='AUTO' or data=='BOOST':
+                #expire the heater delay so it comes on right away    
+                self._last_heat_off_time=self._last_heat_off_time-datetime.timedelta(seconds=self._min_heat_off_time)                
             self._mode=data
             self._heartbeat(datetime.datetime.now()) #force an update
             response=None
