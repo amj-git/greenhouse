@@ -64,6 +64,27 @@
         Rectangle:
             pos: self.pos
             size: self.size
+
+<TimeChooserPopup>:
+    picker:picker
+    BoxLayout:
+        orientation: "vertical"
+        CircularTimePicker
+            id:picker
+        BoxLayout
+            orientation: "horizontal"
+            Button:
+                text: "OK"
+                size_hint_y: None
+                height: "40dp"
+                font_size: menusize1
+                on_release: root.dispatch('on_ok')
+            Button:
+                text: "Cancel"
+                size_hint_y: None
+                height: "40dp"
+                font_size: menusize1
+                on_release: root.dispatch('on_cancel')
             
 <HeaterScreen>:
     menu_root:menu_root
@@ -71,12 +92,18 @@
     b1:b1
     b2:b2
     b3:b3
+    b21:b21
     b99:b99
     BoxLayout:
         id: root_box
         orientation: 'horizontal'
         BoxLayout:
             id: non_menu_root
+            Button:
+                id:b21
+                text:'Test Timepicker'
+                font_size: menusize1
+                on_release: root.test_timepicker()
         BoxLayout:
             id: menu_root
             orientation: 'vertical'

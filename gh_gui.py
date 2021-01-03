@@ -78,6 +78,7 @@ if __name__ == "__main__":
     from gh_io_settings import SettingsScreen
     from k_yesnopopup import YesNoPopup
     from kivy.properties import ObjectProperty
+    from k_circulardatetimepicker import TimeChooserPopup
 
     
     #Load the main kv definition file
@@ -207,6 +208,7 @@ if __name__ == "__main__":
             b1=ObjectProperty(None)
             b2=ObjectProperty(None)
             b3=ObjectProperty(None)
+            b21=ObjectProperty(None)
             b99=ObjectProperty(None)
              
             #Layout defined in gh_gui.kv
@@ -249,6 +251,19 @@ if __name__ == "__main__":
             
         def on_enter(self):
             self.get_mode()
+            
+        def test_timepicker(self):
+            tc=TimeChooserPopup(title='Choose Time',
+                                size_hint=(0.6, 0.9))                               
+            tc.bind(on_ok=self.set_time)
+            tc.open()
+            
+        def set_time(self,instance):
+            h=instance.picker.hours
+            m=instance.picker.minutes
+            print("gh_gui.Heater.set_time h=",h,"m=",m)
+            instance.dismiss()
+
          
     class LightingScreen(Screen):
         def __init__(self, **kwargs):
