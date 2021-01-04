@@ -65,24 +65,32 @@
             pos: self.pos
             size: self.size
 
+#See k_circulardatetimepicker.py
 <TimeChooserPopup>:
     picker:picker
+    content:content
+    title: "Choose Time"
+    title_size: menusize1
+    size_hint: (0.65, 0.95)
+    auto_dismiss:False
     BoxLayout:
+        id:content
         orientation: "vertical"
         CircularTimePicker
             id:picker
-        BoxLayout
+            #selector_color: (0,0.9,1) 
+            size_hint: 1.0, 0.85
+        BoxLayout:            
+            size_hint: 1.0, 0.15
             orientation: "horizontal"
             Button:
                 text: "OK"
-                size_hint_y: None
-                height: "40dp"
+                #size_hint_y: None
                 font_size: menusize1
                 on_release: root.dispatch('on_ok')
             Button:
                 text: "Cancel"
-                size_hint_y: None
-                height: "40dp"
+                #size_hint_y: None
                 font_size: menusize1
                 on_release: root.dispatch('on_cancel')
             

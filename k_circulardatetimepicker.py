@@ -159,7 +159,7 @@ class CircularNumberPicker(CircularLayout):
     defaults to 1.
     """
 
-    selector_color = ListProperty([.337, .439, .490])
+    selector_color = ListProperty([0, .9, 1])
     """Color of the number selector. RGB.
     :attr:`selector_color` is a :class:`~kivy.properties.ListProperty` and
     defaults to [.337, .439, .490] (material green).
@@ -468,11 +468,14 @@ class CircularTimePicker(BoxLayout):
     defaults to "hours".
     """
 
-    selector_color = ListProperty([.337, .439, .490])
+    selector_color = ListProperty([0, .9, 1])
     """Color of the number selector and of the highlighted text. RGB.
     :attr:`selector_color` is a :class:`~kivy.properties.ListProperty` and
     defaults to [.337, .439, .490] (material green).
     """
+
+    #added to make it clearer whether AM/PM selected
+    deselected_ampm_color = ListProperty([.3, .3, .3])
 
     color = ListProperty([1, 1, 1])
     """Color of the number labels and of the center dot. RGB.
@@ -495,6 +498,7 @@ class CircularTimePicker(BoxLayout):
         return datetime.time(*self.time_list)
     def _set_time(self, dt):
         self.time_list = [dt.hour, dt.minute]
+        self._am = True if dt.hour <= 12 else False
     time = AliasProperty(_get_time, _set_time, bind=("time_list",))
     """Selected time as a datetime.time object.
     :attr:`time` is an :class:`~kivy.properties.AliasProperty`.
@@ -515,8 +519,8 @@ class CircularTimePicker(BoxLayout):
     time_text = AliasProperty(_get_time_text, None, bind=("hours", "minutes", "time_format", "picker"))
 
     def _get_ampm_text(self):
-        amc = rgb_to_hex(*self.selector_color) if self._am else rgb_to_hex(*self.color)
-        pmc = rgb_to_hex(*self.selector_color) if not self._am else rgb_to_hex(*self.color)
+        amc = rgb_to_hex(*self.color) if self._am else rgb_to_hex(*self.deselected_ampm_color)
+        pmc = rgb_to_hex(*self.color) if not self._am else rgb_to_hex(*self.deselected_ampm_color)
         return self.ampm_format.format(am_color=amc, pm_color=pmc)
     ampm_text = AliasProperty(_get_ampm_text, None, bind=("hours", "ampm_format", "_am"))
 
@@ -610,7 +614,7 @@ class CircularTimePicker(BoxLayout):
         picker.pos = container.pos
         picker.size = container.size
         picker.selector_color = self.selector_color
-        picker.color = self.color
+        picker.color = self.color + [1]
         picker.selector_alpha = self.selector_alpha
 
         if noanim:
@@ -640,10 +644,6 @@ class TimeChooserPopup(Popup):
     __events__ = ('on_ok', 'on_cancel')
     
     picker=ObjectProperty(None)
-    
-    def __init__(self,**kwargs) -> None:
-        super(TimeChooserPopup, self).__init__(**kwargs)
-        self.auto_dismiss = False
     
     def on_ok(self):
         pass

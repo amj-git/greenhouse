@@ -253,8 +253,7 @@ if __name__ == "__main__":
             self.get_mode()
             
         def test_timepicker(self):
-            tc=TimeChooserPopup(title='Choose Time',
-                                size_hint=(0.6, 0.9))                               
+            tc=TimeChooserPopup()                               
             tc.bind(on_ok=self.set_time)
             tc.open()
             
