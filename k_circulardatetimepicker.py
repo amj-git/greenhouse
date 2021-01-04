@@ -446,7 +446,7 @@ class CircularTimePicker(BoxLayout):
     """
 
     # military = BooleanProperty(False)
-    time_format = StringProperty("[color={hours_color}][ref=hours]{hours}[/ref][/color]:[color={minutes_color}][ref=minutes]{minutes:02d}[/ref][/color]")
+    time_format = StringProperty("[color={hours_color}][ref=hours]    {hours}[/ref][/color]:[color={minutes_color}][ref=minutes]{minutes:02d}    [/ref][/color]")
     """String that will be formatted with the time and shown in the time label.
     Can be anything supported by :meth:`str.format`. Make sure you don't
     remove the refs. See the default for the arguments passed to format.
@@ -454,7 +454,7 @@ class CircularTimePicker(BoxLayout):
     defaults to "[color={hours_color}][ref=hours]{hours}[/ref][/color]:[color={minutes_color}][ref=minutes]{minutes:02d}[/ref][/color]".
     """
 
-    ampm_format = StringProperty("[color={am_color}][ref=am]AM[/ref][/color]\n[color={pm_color}][ref=pm]PM[/ref][/color]")
+    ampm_format = StringProperty("[color={am_color}][ref=am]AM       [/ref][/color]\n[color={pm_color}][ref=pm]PM       [/ref][/color]")
     """String that will be formatted and shown in the AM/PM label.
     Can be anything supported by :meth:`str.format`. Make sure you don't
     remove the refs. See the default for the arguments passed to format.
@@ -547,9 +547,9 @@ class CircularTimePicker(BoxLayout):
         elif ref == "minutes":
             self.picker = "minutes"
         elif ref == "am":
-            self._am = True
+            self._am = not self._am  #for larger target
         elif ref == "pm":
-            self._am = False
+            self._am = not self._am
 
     def on_selected(self, *a):
         if not self._picker:
