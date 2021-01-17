@@ -100,19 +100,34 @@
     v1:v1
     t1:t1
     t2:t2
-    #size_hint_y:None  
-    #height: 100
+    size_hint_y:None  
+    height: 75
         
     orientation:'horizontal'
-    Label:
-        id:v1
-        font_size: schedtext 
-    Label:
-        id:t1        
+    Button:
+        id: v1
+        halign: 'center'
+        on_release: root.edit_value()
+        background_color: (1,0.65,0,1)
+        background_down: 'shapes/but1.png'
+        background_normal: 'shapes/but2.png'
         font_size: schedtext
-    Label:
-        id:t2        
-        font_size: schedtext 
+    Button:
+        id: t1
+        halign: 'center'
+        #on_release: root.edit_time()
+        background_color: (1,0.65,0,1)
+        background_down: 'shapes/but1.png'
+        background_normal: 'shapes/but2.png'
+        font_size: schedtext
+    Button:
+        id: t2
+        halign: 'center'
+        #on_release: root.edit_time()
+        background_color: (1,0.65,0,1)
+        background_down: 'shapes/but1.png'
+        background_normal: 'shapes/but2.png'
+        font_size: schedtext    
         
 #Auto time schedule editor - see gh_schedule_edit.py
 <SchedEdit_gh>:
@@ -127,9 +142,8 @@
     BoxLayout:
         id: cont_grid
         orientation: 'vertical'
-        #size_hint: (1,None)      
-        size_hint_y: None
-        height:600
+        size_hint: (1,None)      
+        height:self.minimum_height
         padding: [dp(55),0,0,0]     #avoid the scrollbar
             
 <HeaterScreen>:
@@ -145,8 +159,22 @@
         orientation: 'horizontal'
         BoxLayout:
             id: non_menu_root
+            orientation: 'vertical'
             SchedEdit_gh:
                 id: s1
+            BoxLayout:
+                size_hint: (1,0.15)
+                orientation: 'horizontal'
+                Button:
+                    text:'Add'
+                    font_size: menusize1
+                Button:
+                    text:'Delete'
+                    font_size: menusize1
+                Button:
+                    text:'Save'
+                    font_size: menusize1
+                    on_press: root.save_schedule()
         BoxLayout:
             id: menu_root
             orientation: 'vertical'

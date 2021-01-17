@@ -256,9 +256,11 @@ if __name__ == "__main__":
             
         def load_schedule(self):
             sched=self._gio.io_query('HEATER:SCHED?',0,1)
-            self.s1.load_sched(sched)
-            
-            
+            self.s1.load_sched(sched,u' \xb0C')
+        
+        def save_schedule(self):
+            sched=self.s1.get_sched()    
+            print(sched)
 
          
     class LightingScreen(Screen):

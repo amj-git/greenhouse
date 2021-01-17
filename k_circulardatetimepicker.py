@@ -528,7 +528,7 @@ class CircularTimePicker(BoxLayout):
         super(CircularTimePicker, self).__init__(**kw)
         if self.hours >= 12:
             self._am = False
-        self.bind(time_list=self.on_time_list, picker=self._switch_picker, _am=self.on_ampm)
+        self.bind(time_list=self.on_time_list, picker=self._switch_picker, _am=self.on_ampm, hours=self.on_hours)
         self._h_picker = CircularHourPicker()
         self._m_picker = CircularMinutePicker()
         Clock.schedule_once(self.on_selected)
@@ -578,6 +578,10 @@ class CircularTimePicker(BoxLayout):
             self.hours = self.hours if self.hours <  12 else self.hours - 12
         else:
             self.hours = self.hours if self.hours >= 12 else self.hours + 12
+            
+    def on_hours(self, *a):
+        if self.hours >= 12:
+            self._am = False        
 
     def _switch_picker(self, *a, **kw):
         noanim = "noanim" in kw
@@ -593,6 +597,7 @@ class CircularTimePicker(BoxLayout):
             picker = self._h_picker
             prevpicker = self._m_picker
         elif self.picker == "minutes":
+            self._picker.selected = self.minutes
             picker = self._m_picker
             prevpicker = self._h_picker
 
@@ -645,6 +650,7 @@ class TimeChooserPopup(Popup):
     
     picker=ObjectProperty(None)
     
+   
     def on_ok(self):
         pass
     
