@@ -1,6 +1,7 @@
 #<KvLang>
 
 #:set menusize1 "30sp"
+#:set schedtext "40sp"
 
 <ContPanel_gh>:
     do_scroll_x: False
@@ -76,7 +77,7 @@
     BoxLayout:
         id:content
         orientation: "vertical"
-        CircularTimePicker
+        CircularTimePicker:
             id:picker
             #selector_color: (0,0.9,1) 
             size_hint: 1.0, 0.85
@@ -93,6 +94,43 @@
                 #size_hint_y: None
                 font_size: menusize1
                 on_release: root.dispatch('on_cancel')
+
+#Auto time schedule editor lines - see gh_schedule_edit.py
+<SchedLineEdit_gh>:
+    v1:v1
+    t1:t1
+    t2:t2
+    #size_hint_y:None  
+    #height: 100
+        
+    orientation:'horizontal'
+    Label:
+        id:v1
+        font_size: schedtext 
+    Label:
+        id:t1        
+        font_size: schedtext
+    Label:
+        id:t2        
+        font_size: schedtext 
+        
+#Auto time schedule editor - see gh_schedule_edit.py
+<SchedEdit_gh>:
+    do_scroll_x: False
+    do_scroll_y: True
+    scroll_type: ['bars']
+    container: cont_grid
+    bar_width: '55dp'
+    bar_pos_y: 'left'
+    bar_color: [.7, .7, .7, .9]
+    bar_inactive_color: [.7, .7, .7, .9]
+    BoxLayout:
+        id: cont_grid
+        orientation: 'vertical'
+        #size_hint: (1,None)      
+        size_hint_y: None
+        height:600
+        padding: [dp(55),0,0,0]     #avoid the scrollbar
             
 <HeaterScreen>:
     menu_root:menu_root
@@ -100,18 +138,15 @@
     b1:b1
     b2:b2
     b3:b3
-    b21:b21
+    s1:s1
     b99:b99
     BoxLayout:
         id: root_box
         orientation: 'horizontal'
         BoxLayout:
             id: non_menu_root
-            Button:
-                id:b21
-                text:'Test Timepicker'
-                font_size: menusize1
-                on_release: root.test_timepicker()
+            SchedEdit_gh:
+                id: s1
         BoxLayout:
             id: menu_root
             orientation: 'vertical'
@@ -267,6 +302,23 @@
                 font_size: menusize1
                 halign: 'center'
                 on_release: root.confirm_quit()            
+
+<gh_sched_line_edit>:
+    value_box:value_box
+    t1_box:t1_box
+    t2_box:t2_box
+    
+    orientation:'horizontal'
+    Label:
+        id:value_box
+    Label:
+        id:t1_box        
+    Label:
+        id:t2_box        
+        
+    
+<gh_schedule_edit>:
+    
 
      
 #</KvLang>

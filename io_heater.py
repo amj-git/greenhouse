@@ -262,6 +262,17 @@ class IO_Thread_Heater(IO_Thread):
             
         if cmd=='HEATER:BOOST_PARAMS?':
             response=(self._boosttarget,self._boost_minutes,self._boost_end_time)    
+        
+        if cmd=='HEATER:SCHED_CLEAR':
+            self._schedule=[]
+        
+        if cmd=='HEATER:SCHED_ADD':
+            d=data.split(',')
+            if len(d)==5:
+                self._add_to_schedule(d)
+            
+        if cmd=='HEATER:SCHED?':
+            response=self._schedule
             
         return response            
         
