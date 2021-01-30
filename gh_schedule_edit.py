@@ -5,6 +5,9 @@ from k_circulardatetimepicker import TimeChooserPopup
 from kivy.properties import ObjectProperty
 
 
+LABEL_NORMAL_COL=[1.0,1.0,1.0,1]
+LABEL_HIGHLIGHT_COL=[1.0,1.0,0.0,1]
+
 class SchedLineEdit_gh(BoxLayout):
     
     v1=ObjectProperty()
@@ -13,6 +16,7 @@ class SchedLineEdit_gh(BoxLayout):
     
     def __init__(self, *args, **kwargs):
         self._sched_line=kwargs.pop('sched_line',[])
+        self.on_select=kwargs.pop('on_select',None)
         self._units=kwargs.pop('units','')
         super(SchedLineEdit_gh, self).__init__(*args, **kwargs)
         self.t1.bind(on_release=self.edit_time)
@@ -37,24 +41,33 @@ class SchedLineEdit_gh(BoxLayout):
         
     def edit_time(self,instance):
         s=self._sched_line
-        h=0
-        m=0
-        if instance==self.t1:
-            h=s[1]
-            m=s[2]
-            self._active_editor='t1'
-        if instance==self.t2:
-            h=s[3]
-            m=s[4]
-            self._active_editor='t2'        
-        tc=TimeChooserPopup()   
-        tc.picker.hours=h
-        tc.picker.minutes=m            
-        tc.bind(on_ok=self.set_time)
-        tc.open()
+        if self.on_select is not None:
+            self.on_select(self)
+        if len(s)==5:
+            h=0
+            m=0
+            tc=TimeChooserPopup() 
+            if instance==self.t1:
+                h=s[1]
+                m=s[2]
+                self._active_editor='t1'
+                tc.title='Choose Start Time'
+            if instance==self.t2:
+                h=s[3]
+                m=s[4]
+                self._active_editor='t2'    
+                tc.title='Choose End Time'    
+            tc.picker.hours=h
+            tc.picker.minutes=m            
+            tc.bind(on_ok=self.set_time)
+            tc.open()
 
     def edit_value(self,*args):
-        pass
+        s=self._sched_line
+        if self.on_select is not None:
+            self.on_select(self)
+        if len(s)==5:
+            pass #add a value chooser for s[0] here
 
     def set_time(self,instance):
         s=self._sched_line
@@ -72,24 +85,75 @@ class SchedLineEdit_gh(BoxLayout):
         
     def get_sched(self):
         return self._sched_line
+    
+    def select_line(self):
+        self.v1.color=LABEL_HIGHLIGHT_COL
+        self.t1.color=LABEL_HIGHLIGHT_COL
+        self.t2.color=LABEL_HIGHLIGHT_COL
+        
+    def deselect_line(self):
+        self.v1.color=LABEL_NORMAL_COL
+        self.t1.color=LABEL_NORMAL_COL
+        self.t2.color=LABEL_NORMAL_COL
+        
+        
 
 class SchedEdit_gh(ScrollView):
     
     container=ObjectProperty()
     
     def load_sched(self,sched,units):
+        self._units=units
+        self.deselect_all_lines()
         self._sched=sched
         self.container.clear_widgets()
         l=SchedLineEdit_gh()
         self.container.add_widget(l)  #add title
         print(self._sched)
         for peg in self._sched:
-            l=SchedLineEdit_gh(sched_line=peg,units=units)
+            l=SchedLineEdit_gh(sched_line=peg,units=self._units,on_select=self.on_select)
             self.container.add_widget(l)
+        self.selected_line=None
+        
+    #called when a line is selected    
+    def on_select(self,instance):
+        self.selected_line=instance
+        self.deselect_all_lines()
+        self.selected_line.select_line()
+        
+                
+    def deselect_all_lines(self):
+        for line in self.container.children:
+            line.deselect_line()
             
+    #finds the index of a line in the container's child list.  Used
+    #for adding an entry after the currently selected line
+    def find_line_index(self,line):
+        for i in range (0,len(self.container.children)):
+            if line==self.container.children[i]:
+                return i
+        return 0
+        
+    def delete_current_line(self):
+        if self.selected_line is not None:
+            self.container.remove_widget(self.selected_line)
+        self.selected_line=None
+    
+    def add_line(self):
+        peg=[12,12,0,12,1]
+        l=SchedLineEdit_gh(sched_line=peg,units=self._units,on_select=self.on_select)
+        if self.selected_line is not None:
+            sel_line_index=self.find_line_index(self.selected_line)
+        else:
+            sel_line_index=0
+        self.container.add_widget(l,sel_line_index)
+        self.on_select(l)
+    
     def get_sched(self):
         s=[]
-        for line in self.container.children:
-            s.append(line.get_sched())
+        for line in reversed(self.container.children):
+            ldata=line.get_sched()
+            if len(ldata)>0: #avoid the title line
+                s.append(ldata)
         return s
     

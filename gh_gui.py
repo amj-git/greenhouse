@@ -261,6 +261,12 @@ if __name__ == "__main__":
         def save_schedule(self):
             sched=self.s1.get_sched()    
             print(sched)
+            
+        def delete_line(self):
+            self.s1.delete_current_line()
+            
+        def add_line(self):
+            self.s1.add_line()
 
          
     class LightingScreen(Screen):
