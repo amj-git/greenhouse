@@ -2,6 +2,7 @@
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.boxlayout import BoxLayout
 from k_circulardatetimepicker import TimeChooserPopup
+from k_floatknob import FloatKnobPopup
 from kivy.properties import ObjectProperty
 
 
@@ -67,7 +68,14 @@ class SchedLineEdit_gh(BoxLayout):
         if self.on_select is not None:
             self.on_select(self)
         if len(s)==5:
-            pass #add a value chooser for s[0] here
+            vc=FloatKnobPopup()
+            vc.title='Choose Setting'
+            vc.picker.min=-10
+            vc.picker.max=40
+            vc.picker.step=0.5
+            vc.picker.value=s[0]
+            vc.bind(on_ok=self.set_val)
+            vc.open()
 
     def set_time(self,instance):
         s=self._sched_line
@@ -79,6 +87,15 @@ class SchedLineEdit_gh(BoxLayout):
         elif self._active_editor=='t2':
             s[3]=h
             s[4]=m
+        instance.dismiss()
+        self._sched_line=s
+        self.show_sched_line()
+    
+    def set_val(self,instance):
+        s=self._sched_line
+        v=instance.picker.value
+        s[0]=round(v*2)/2
+        print('Value=',v)
         instance.dismiss()
         self._sched_line=s
         self.show_sched_line()
@@ -151,7 +168,7 @@ class SchedEdit_gh(ScrollView):
     
     def get_sched(self):
         s=[]
-        for line in reversed(self.container.children):
+        for line in reversed(self.container.children):  #reversed to get top to bottom order
             ldata=line.get_sched()
             if len(ldata)>0: #avoid the title line
                 s.append(ldata)
