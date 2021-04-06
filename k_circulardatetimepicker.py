@@ -495,10 +495,13 @@ class CircularTimePicker(BoxLayout):
     _bound = DictProperty({})
 
     def _get_time(self):
+        self.on_hours(None)  #cure timing race with the on_hours function
         return datetime.time(*self.time_list)
+    
     def _set_time(self, dt):
         self.time_list = [dt.hour, dt.minute]
         self._am = True if dt.hour <= 12 else False
+
     time = AliasProperty(_get_time, _set_time, bind=("time_list",))
     """Selected time as a datetime.time object.
     :attr:`time` is an :class:`~kivy.properties.AliasProperty`.

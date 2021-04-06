@@ -69,7 +69,7 @@ Builder.load_string('''
 
     Label:
         id: _label
-        text: "%.1f"%(root.value)
+        text: "%.1f"%(root.value) + root.units
         center: root.center
         font_size: root.font_size
         color: root.font_color''')
@@ -124,6 +124,10 @@ class Knob(Widget):
     and defaults to empty string.
     '''
 
+    units = StringProperty("units")
+    '''Suffix to display on knob
+    '''
+    
     knobimg_color = ListProperty([1, 1, 1, 1])
     '''Color to apply to :attr:`knobimg_source` texture when loaded.
     :attr:`knobimg_color` is a :class:`~kivy.properties.ListProperty`

@@ -64,6 +64,7 @@ if __name__ == "__main__":
     from kivy.uix.textinput import TextInput
     from kivy.uix.widget import Widget
     from kivy.uix.settings import SettingsWithSidebar
+    from kivy.uix.popup import Popup
     import gh_db_manager
     from datetime import datetime, timedelta    
     from kivy.uix.screenmanager import ScreenManager, Screen
@@ -259,8 +260,22 @@ if __name__ == "__main__":
             self.s1.load_sched(sched,u' \xb0C')
         
         def save_schedule(self):
-            sched=self.s1.get_sched()    
+            sched,lines=self.s1.get_sched()    
             print(sched)
+            if self.s1.has_overlaps():  #overlaps - display error
+                content = BoxLayout(orientation='vertical')
+                content.add_widget(Label(text='Schedule has Time Overlaps (see RED times)'))
+                b1=Button(text='Close')
+                content.add_widget(b1)                
+                popup = Popup(title='Error',content=content, auto_dismiss=False,size_hint=(0.6, 0.4),pos_hint={'x':0.2, 'y':0.3})
+                b1.bind(on_press=popup.dismiss)
+                popup.open()
+            else:
+                self._gio.send_io_command('HEATER:SCHED_CLEAR',0)  #clear existing
+                for s in sched:
+                    self._gio.send_io_command('HEATER:SCHED_ADD',','.join(map(str,s)))
+
+            
             
         def delete_line(self):
             self.s1.delete_current_line()
