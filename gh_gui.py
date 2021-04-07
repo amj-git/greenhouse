@@ -271,9 +271,9 @@ if __name__ == "__main__":
                 b1.bind(on_press=popup.dismiss)
                 popup.open()
             else:
-                self._gio.send_io_command('HEATER:SCHED_CLEAR',0)  #clear existing
+                self._gio.send_io_command('HEATER:SCHED_CLEAR',0)  #clear existing schedule
                 for s in sched:
-                    self._gio.send_io_command('HEATER:SCHED_ADD',','.join(map(str,s)))
+                    self._gio.send_io_command('HEATER:SCHED_ADD',','.join(map(str,s)))  #convert to csv lines and send to heater thread
 
             
             
@@ -294,6 +294,7 @@ if __name__ == "__main__":
             b1=ObjectProperty(None)
             b2=ObjectProperty(None)
             b3=ObjectProperty(None)
+            s1=ObjectProperty(None)
             b99=ObjectProperty(None)
             
                         
@@ -335,7 +336,35 @@ if __name__ == "__main__":
             
         def on_enter(self):
             self.get_mode()            
-                
+            self.load_schedule()    
+            
+        def load_schedule(self):
+            sched=self._gio.io_query('LIGHT_CTRL:SCHED?',0,1)
+            self.s1.load_sched(sched,'lx')
+
+        def save_schedule(self):
+            sched,lines=self.s1.get_sched()    
+            print(sched)
+            if self.s1.has_overlaps():  #overlaps - display error
+                content = BoxLayout(orientation='vertical')
+                content.add_widget(Label(text='Schedule has Time Overlaps (see RED times)'))
+                b1=Button(text='Close')
+                content.add_widget(b1)                
+                popup = Popup(title='Error',content=content, auto_dismiss=False,size_hint=(0.6, 0.4),pos_hint={'x':0.2, 'y':0.3})
+                b1.bind(on_press=popup.dismiss)
+                popup.open()
+            else:
+                self._gio.send_io_command('LIGHT_CTRL:SCHED_CLEAR',0)  #clear existing schedule
+                for s in sched:
+                    self._gio.send_io_command('LIGHT_CTRL:SCHED_ADD',','.join(map(str,s)))  #convert to csv lines and send to heater thread
+            
+        def delete_line(self):
+            self.s1.delete_current_line()
+            
+        def add_line(self):
+            self.s1.add_line()
+
+
     
     class IOStatusScreen(Screen):
         def __init__(self, **kwargs):

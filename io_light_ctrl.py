@@ -216,6 +216,8 @@ class IO_Thread_Light_Ctrl(IO_Thread):
     #process a command string
     def command(self,cmd,data):
         print("io_light_ctrl:command ",cmd,data)
+        response=None
+        
         #HEATER:MODE <OFF|AUTO|BOOST> 
         if cmd=='LIGHT_CTRL:MODE':
             if data=='BOOST':
@@ -239,6 +241,23 @@ class IO_Thread_Light_Ctrl(IO_Thread):
             
         if cmd=='LIGHT_CTRL:BOOST_PARAMS?':
             response=(self._boosttarget,self._boost_minutes,self._boost_end_time)    
+            
+        if cmd=='LIGHT_CTRL:SCHED_CLEAR':
+            self._schedule=[]
+        
+        if cmd=='LIGHT_CTRL:SCHED_ADD':
+            d=data.split(',')
+            if len(d)==5:
+                d_int=[]
+                d_int.append(float(d[0]))
+                d_int.append(int(d[1]))
+                d_int.append(int(d[2]))
+                d_int.append(int(d[3]))
+                d_int.append(int(d[4]))
+                self._add_to_schedule(d_int)        
+            
+        if cmd=='LIGHT_CTRL:SCHED?':
+            response=self._schedule        
             
         return response            
         

@@ -209,6 +209,7 @@
             orientation: 'vertical'
             SchedEdit_gh:
                 id: s1
+                val_type: 'temp'
             BoxLayout:
                 size_hint: (1,0.15)
                 orientation: 'horizontal'
@@ -271,12 +272,32 @@
     b1:b1
     b2:b2
     b3:b3
+    s1:s1
     b99:b99
     BoxLayout:
         id: root_box
         orientation: 'horizontal'
         BoxLayout:
             id: non_menu_root
+            orientation: 'vertical'
+            SchedEdit_gh:
+                id: s1
+                val_type: 'light'
+            BoxLayout:
+                size_hint: (1,0.15)
+                orientation: 'horizontal'
+                Button:
+                    text:'Add'
+                    font_size: menusize1
+                    on_press: root.add_line()
+                Button:
+                    text:'Delete'
+                    font_size: menusize1
+                    on_press: root.delete_line()
+                Button:
+                    text:'Save'
+                    font_size: menusize1
+                    on_press: root.save_schedule()
         BoxLayout:
             id: menu_root
             orientation: 'vertical'

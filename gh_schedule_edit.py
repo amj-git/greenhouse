@@ -23,6 +23,7 @@ class SchedLineEdit_gh(BoxLayout):
         self._units=kwargs.pop('units','')
         self.tc=kwargs.pop('tc',None)
         self.vc=kwargs.pop('vc',None)
+        self.val_type=kwargs.pop('val_type','temp')  #temp or light
         super(SchedLineEdit_gh, self).__init__(*args, **kwargs)
         self.t1.bind(on_release=self.edit_time)
         self.t2.bind(on_release=self.edit_time)
@@ -30,7 +31,7 @@ class SchedLineEdit_gh(BoxLayout):
         
     def show_sched_line(self):
         if len(self._sched_line)==5:       
-            self.v1.text="{0}".format(self._sched_line[0])+self._units
+            self.v1.text="{0}".format(self._sched_line[0])+' '+self._units
             self.t1.text="{:02d}:{:02d}".format(self._sched_line[1],self._sched_line[2])
             self.t2.text="{:02d}:{:02d}".format(self._sched_line[3],self._sched_line[4])
         else:
@@ -76,10 +77,17 @@ class SchedLineEdit_gh(BoxLayout):
         if len(s)==5:
             vc=self.vc             
             vc.picker.units=self._units
-            vc.title='Choose Setting'
-            vc.picker.min=-10
-            vc.picker.max=40
-            vc.picker.step=0.5
+            if self.val_type=='temp': #temperature
+                vc.title='Choose Temperature'
+                vc.picker.min=-10
+                vc.picker.max=40
+                vc.picker.step=0.5
+            elif self.val_type=='light': #temperature
+                vc.title='Choose Light Target'
+                vc.picker.min=0
+                vc.picker.max=20000
+                vc.picker.step=100
+                vc.picker.marker_img= "shapes/blacktoyellow.png"
             vc.picker.value=s[0]
             vc.bind(on_ok=self.set_val)
             vc.bind(on_cancel=self.on_cancel_val)
@@ -104,7 +112,10 @@ class SchedLineEdit_gh(BoxLayout):
     def set_val(self,instance):
         s=self._sched_line
         v=instance.picker.value
-        s[0]=round(v*2)/2
+        if self.val_type=='temp':
+            s[0]=round(v*2)/2
+        elif self.val_type=='light':
+            s[0]=round(v/100)*100
         instance.unbind(on_ok=self.set_val)  #remove the binding as we re-use the form!
         instance.dismiss()
         self._sched_line=s
@@ -148,6 +159,7 @@ class SchedEdit_gh(ScrollView):
     container=ObjectProperty()
     
     def __init__(self, *args, **kwargs):
+        self.val_type=kwargs.pop('val_type','temp')  #temp or light
         super(SchedEdit_gh, self).__init__(*args, **kwargs)
         self.vc=FloatKnobPopup()  #value chooser - only create once to improve responsiveness
         self.tc=TimeChooserPopup()  #time chooser
@@ -163,7 +175,7 @@ class SchedEdit_gh(ScrollView):
         print(self._sched)
         for peg in self._sched:
             print(peg)
-            l=SchedLineEdit_gh(sched_line=peg,units=self._units,on_select=self.on_select,vc=self.vc,tc=self.tc,on_update=self.on_update)
+            l=SchedLineEdit_gh(sched_line=peg,units=self._units,on_select=self.on_select,vc=self.vc,tc=self.tc,on_update=self.on_update,val_type=self.val_type)
             self.container.add_widget(l)
         self.selected_line=None
         
@@ -196,7 +208,7 @@ class SchedEdit_gh(ScrollView):
     
     def add_line(self):
         peg=[12,12,0,12,1]
-        l=SchedLineEdit_gh(sched_line=peg,units=self._units,on_select=self.on_select,vc=self.vc,tc=self.tc,on_update=self.on_update)
+        l=SchedLineEdit_gh(sched_line=peg,units=self._units,on_select=self.on_select,vc=self.vc,tc=self.tc,on_update=self.on_update,val_type=self.val_type)
         if self.selected_line is not None:
             sel_line_index=self.find_line_index(self.selected_line)
         else:
