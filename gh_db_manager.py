@@ -184,6 +184,8 @@ class param_db:
         value is a numeric format
     '''
     def write_value(self,timestamp,val):
+        #print("Debug gh_db_manager.write_value timestamp=",timestamp," val=",val)
+        #print("Debug gh_db_manager.write_value self=",self._op_desc,"/",self._tname,"/",self._pname)
         timestamp_ms=datetime_to_timestamp(timestamp)
         data=(timestamp_ms,self.compress_val(val))
         with self._lock:

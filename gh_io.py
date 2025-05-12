@@ -75,8 +75,10 @@ def gh_io_main(io_q,io_ctrl):
                          sim_hw=sim_mode, \
                          period=10.2, \
                          addr='28-00000c36cbaa')
+
     io_manager.add_thread(io_thread4)
     '''
+
     
     io_thread5=IO_Thread_DS18B20(threadname="Control Box", \
                          out_q=local_io_q, \
@@ -109,6 +111,7 @@ def gh_io_main(io_q,io_ctrl):
                          out_q=local_io_q, \
                          sim_hw=sim_mode, \
                          addr=0x5c )
+
     io_manager.add_thread(io_thread6b)    
 
     #Light Controller on pin GPIO18.
@@ -121,6 +124,7 @@ def gh_io_main(io_q,io_ctrl):
                          target_pname='Light', \
                          slave_thread=io_thread6b )
     io_manager.add_thread(io_thread_light_ctrl1)    
+
     
     #Moisture sensors on pin 10,9,11
     #ref is on pin 12
@@ -132,7 +136,7 @@ def gh_io_main(io_q,io_ctrl):
                          ref_pin=12, \
                          det_pins=[16] )  #just sensor 1
                          #det_pins=[16,20,21] ) #all moisture sensors
-    io_manager.add_thread(io_thread8)    
+#    io_manager.add_thread(io_thread8)    
 
     #Sprinkler on pin 13,19,26
     #All handled by the same thread
@@ -143,6 +147,19 @@ def gh_io_main(io_q,io_ctrl):
                          valve_pins=[13,19,26], \
                          valve_names=['hose','sprink1','sprink2'] )
     io_manager.add_thread(io_thread_sprink) 
+
+    #Heater on pin 25.  Fan on pin 24
+    io_thread_heater=IO_Thread_Heater(threadname="Heater", \
+                         out_q=local_io_q, \
+                         sim_hw=sim_mode, \
+                         period=5.1, \
+                         heat_pin=25, \
+                         fan_pin=24, \
+                         target_tname='DHT1', \
+                         target_pname='Temp' )
+#    io_manager.add_thread(io_thread_heater) 
+    
+
     
     '''
     #demo of a thread that uses data from another thread

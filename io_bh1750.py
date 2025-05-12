@@ -51,7 +51,7 @@ class io_bh1750:
                 return convertToNumber(data) 
             except IOError:
                 return -999
-                   
+
 
 
 def main():

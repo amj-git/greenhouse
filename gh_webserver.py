@@ -53,10 +53,8 @@ class gh_webserver(Thread):
         #----------------------
         def send_newdata(data):
             #self._log_fn("gh_webserver.on_newdata: Sending Data to Webserver")
-            socketio.emit("on_newdata",json.dumps(data),broadcast=True)
-        
 
-            
+            socketio.emit("on_newdata",json.dumps(data))
             
         #----------------------    
         @socketio.on('get_table_data')

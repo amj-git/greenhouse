@@ -14,7 +14,7 @@ class IO_Thread_Sprinkler(IO_Thread):
         self._valve_pins=kwargs.get('valve_pins',False)
         self._valve_names=kwargs.get('valve_names',False)
         self._schedule=[]
-        self._valve_mode=['OFF']*len(self._valve_pins)
+        self._valve_mode=['AUTO']*len(self._valve_pins)
         self._set_default_schedule()
         self._valve_states=[0]*len(self._valve_pins)
         IO_Thread.__init__(self,**kwargs)
@@ -44,6 +44,7 @@ class IO_Thread_Sprinkler(IO_Thread):
         self._add_to_schedule([0,20,0,20,20])
         self._add_to_schedule([1,19,15,19,35])
         self._add_to_schedule([0,13,30,13,40])
+        self._add_to_schedule([2,19,40,19,56])
         #self._add_to_schedule([0,21,30,21,32])
         print("Sprinkler Schedule: ",self._schedule)
             

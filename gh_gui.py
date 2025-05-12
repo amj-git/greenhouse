@@ -672,6 +672,6 @@ if __name__ == "__main__":
         multiprocessing.set_start_method('fork')
     pr_cont.set_proctitle('gh_main process') #allows process to be idenfified in htop
     pr_cont.set_name('kivy main') #allows process to be idenfified in htop
-    
+
     #Run the app
     gh_gui_app().run()
