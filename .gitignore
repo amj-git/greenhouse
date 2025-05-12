@@ -1,6 +1,8 @@
 #ignore compiled files
 __pycache__/
+*__pycache__*
 *.py[cod]
 *.db
 *.db-journal
 *.xlsx
+gh_gui_app.ini

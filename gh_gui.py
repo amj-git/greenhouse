@@ -63,6 +63,8 @@ if __name__ == "__main__":
     from kivy.uix.anchorlayout import AnchorLayout
     from kivy.uix.textinput import TextInput
     from kivy.uix.widget import Widget
+    from kivy.uix.settings import SettingsWithSidebar
+    from kivy.uix.popup import Popup
     import gh_db_manager
     from datetime import datetime, timedelta    
     from kivy.uix.screenmanager import ScreenManager, Screen
@@ -73,6 +75,16 @@ if __name__ == "__main__":
     import multiprocessing
     from time import sleep
     from gh_webserver import gh_webserver
+    import gh_io_settings
+    from gh_io_settings import SettingsScreen
+    from k_yesnopopup import YesNoPopup
+    from kivy.properties import ObjectProperty
+    from gh_schedule_edit import SchedEdit_gh
+
+    
+    #Load the main kv definition file
+    from kivy.lang.builder import Builder
+    Builder.load_file('gh_gui.kv')
     
     XLABELSTR='Span '
     
@@ -190,32 +202,18 @@ if __name__ == "__main__":
     class HeaterScreen(Screen):
         def __init__(self, **kwargs):
             super(HeaterScreen, self).__init__(**kwargs)
+            self._gh_config=App.get_running_app()._gh_config
+             
+            menu_root=ObjectProperty(None)
+            non_menu_root=ObjectProperty(None)
+            b1=ObjectProperty(None)
+            b2=ObjectProperty(None)
+            b3=ObjectProperty(None)
+            s1=ObjectProperty(None)
+            b99=ObjectProperty(None)
+             
+            #Layout defined in gh_gui.kv
             
-                        
-            #ROOT STRUCTURE
-            self.root_box=BoxLayout(orientation='horizontal')
-            self.add_widget(self.root_box)
-            self.non_menu_root=BoxLayout()
-            self.root_box.add_widget(self.non_menu_root)
-            self.menu_root=BoxLayout(orientation='vertical',size_hint=(0.3,1))
-            self.root_box.add_widget(self.menu_root)
-                                         
-            #MENU
-            self.b1=ToggleButton(text='HEATER OFF',state='normal')
-            self.b1.bind(on_release=self.heateroffclick)
-            self.menu_root.add_widget(self.b1)
-
-            self.b2=ToggleButton(text='HEATER AUTO',state='normal')
-            self.b2.bind(on_release=self.heaterautoclick)
-            self.menu_root.add_widget(self.b2)
-
-            self.b3=ToggleButton(text='HEATER BOOST',state='normal')
-            self.b3.bind(on_release=self.heaterboostclick)
-            self.menu_root.add_widget(self.b3)
-            
-            b99=Button(text='Back',)
-            b99.bind(on_release=self.page_jump1)
-            self.menu_root.add_widget(b99)
                         
         def set_gio(self,gio):
             self._gio=gio
@@ -238,47 +236,67 @@ if __name__ == "__main__":
                        
         def heateroffclick(self,*args):
             self._gio.send_io_command('HEATER:MODE','OFF')
+            self._gh_config._config.set('Heater','MODE','OFF') #save config
+            self._gh_config._config.write()
             self.get_mode()
                     
         def heaterautoclick(self,*args):
             self._gio.send_io_command('HEATER:MODE','AUTO')
+            self._gh_config._config.set('Heater','MODE','AUTO') #save config
+            self._gh_config._config.write()
             self.get_mode()
                     
         def heaterboostclick(self,*args):
             self._gio.send_io_command('HEATER:MODE','BOOST')
+            #DO NOT SAVE BOOST CONFIG - IT IS A TEMPORARY MODE
             self.get_mode()
             
-    
+        def on_enter(self):
+            self.get_mode()
+            self.load_schedule()
+            
+        def load_schedule(self):
+            sched=self._gio.io_query('HEATER:SCHED?',0,1)
+            self.s1.load_sched(sched,u' \xb0C')
+        
+        def save_schedule(self):
+            sched,lines=self.s1.get_sched()    
+            print(sched)
+            if self.s1.has_overlaps():  #overlaps - display error
+                content = BoxLayout(orientation='vertical')
+                content.add_widget(Label(text='Schedule has Time Overlaps (see RED times)'))
+                b1=Button(text='Close')
+                content.add_widget(b1)                
+                popup = Popup(title='Error',content=content, auto_dismiss=False,size_hint=(0.6, 0.4),pos_hint={'x':0.2, 'y':0.3})
+                b1.bind(on_press=popup.dismiss)
+                popup.open()
+            else:
+                self._gio.send_io_command('HEATER:SCHED_CLEAR',0)  #clear existing schedule
+                for s in sched:
+                    self._gio.send_io_command('HEATER:SCHED_ADD',','.join(map(str,s)))  #convert to csv lines and send to heater thread
+
+            
+            
+        def delete_line(self):
+            self.s1.delete_current_line()
+            
+        def add_line(self):
+            self.s1.add_line()
+
          
     class LightingScreen(Screen):
         def __init__(self, **kwargs):
             super(LightingScreen, self).__init__(**kwargs)
+            self._gh_config=App.get_running_app()._gh_config
             
-                        
-            #ROOT STRUCTURE
-            self.root_box=BoxLayout(orientation='horizontal')
-            self.add_widget(self.root_box)
-            self.non_menu_root=BoxLayout()
-            self.root_box.add_widget(self.non_menu_root)
-            self.menu_root=BoxLayout(orientation='vertical',size_hint=(0.3,1))
-            self.root_box.add_widget(self.menu_root)
-                                         
-            #MENU
-            self.b1=ToggleButton(text='LIGHT OFF',state='normal')
-            self.b1.bind(on_release=self.heateroffclick)
-            self.menu_root.add_widget(self.b1)
-
-            self.b2=ToggleButton(text='LIGHT AUTO',state='normal')
-            self.b2.bind(on_release=self.heaterautoclick)
-            self.menu_root.add_widget(self.b2)
-
-            self.b3=ToggleButton(text='LIGHT BOOST',state='normal')
-            self.b3.bind(on_release=self.heaterboostclick)
-            self.menu_root.add_widget(self.b3)
+            menu_root=ObjectProperty(None)
+            non_menu_root=ObjectProperty(None)
+            b1=ObjectProperty(None)
+            b2=ObjectProperty(None)
+            b3=ObjectProperty(None)
+            s1=ObjectProperty(None)
+            b99=ObjectProperty(None)
             
-            b99=Button(text='Back',)
-            b99.bind(on_release=self.page_jump1)
-            self.menu_root.add_widget(b99)
                         
         def set_gio(self,gio):
             self._gio=gio
@@ -301,56 +319,89 @@ if __name__ == "__main__":
                        
         def heateroffclick(self,*args):
             self._gio.send_io_command('LIGHT_CTRL:MODE','OFF')
+            self._gh_config._config.set('Lighting','MODE','OFF') #save config
+            self._gh_config._config.write()
             self.get_mode()
                     
         def heaterautoclick(self,*args):
             self._gio.send_io_command('LIGHT_CTRL:MODE','AUTO')
+            self._gh_config._config.set('Lighting','MODE','AUTO') #save config
+            self._gh_config._config.write()
             self.get_mode()
                     
         def heaterboostclick(self,*args):
             self._gio.send_io_command('LIGHT_CTRL:MODE','BOOST')
+            #don't save boost mode
             self.get_mode()
             
+        def on_enter(self):
+            self.get_mode()            
+            self.load_schedule()    
             
-                
+        def load_schedule(self):
+            sched=self._gio.io_query('LIGHT_CTRL:SCHED?',0,1)
+            self.s1.load_sched(sched,'lx')
+
+        def save_schedule(self):
+            sched,lines=self.s1.get_sched()    
+            print(sched)
+            if self.s1.has_overlaps():  #overlaps - display error
+                content = BoxLayout(orientation='vertical')
+                content.add_widget(Label(text='Schedule has Time Overlaps (see RED times)'))
+                b1=Button(text='Close')
+                content.add_widget(b1)                
+                popup = Popup(title='Error',content=content, auto_dismiss=False,size_hint=(0.6, 0.4),pos_hint={'x':0.2, 'y':0.3})
+                b1.bind(on_press=popup.dismiss)
+                popup.open()
+            else:
+                self._gio.send_io_command('LIGHT_CTRL:SCHED_CLEAR',0)  #clear existing schedule
+                for s in sched:
+                    self._gio.send_io_command('LIGHT_CTRL:SCHED_ADD',','.join(map(str,s)))  #convert to csv lines and send to heater thread
+            
+        def delete_line(self):
+            self.s1.delete_current_line()
+            
+        def add_line(self):
+            self.s1.add_line()
+
+
     
     class IOStatusScreen(Screen):
         def __init__(self, **kwargs):
             self._graph_screen=kwargs.pop('graph_screen',None)
             super(IOStatusScreen, self).__init__(**kwargs)
             
-            #ROOT STRUCTURE
-            self.root_box=BoxLayout(orientation='horizontal')
-            self.add_widget(self.root_box)
-            self.non_menu_root=BoxLayout()
-            self.root_box.add_widget(self.non_menu_root)
-            self.menu_root=BoxLayout(orientation='vertical',size_hint=(0.3,1))
-            self.root_box.add_widget(self.menu_root)
-                                         
-            #MENU
-            b1=Button(text='Graph...',)
-            b1.bind(on_release=self.page_jump1)
-            self.menu_root.add_widget(b1)
-            
-            b12=Button(text='Sprinkler...',)
-            b12.bind(on_release=self.page_jump2)
-            self.menu_root.add_widget(b12)
-
-            b13=Button(text='Heater...',)
-            b13.bind(on_release=self.page_jump3)
-            self.menu_root.add_widget(b13)
-            
-            b14=Button(text='Lighting...',)
-            b14.bind(on_release=self.page_jump4)
-            self.menu_root.add_widget(b14)            
-            
-            b2=Button(text='Exit',)
-            b2.bind(on_release=self.quit_app)
-            self.menu_root.add_widget(b2)
-            
+            menu_root=ObjectProperty(None)
+            non_menu_root=ObjectProperty(None)
+            b1=ObjectProperty(None)
+            b12=ObjectProperty(None)
+            b13=ObjectProperty(None)
+            b14=ObjectProperty(None)
+            b15=ObjectProperty(None)
+            b2=ObjectProperty(None)
+        
         def quit_app(self,*args):
-            App.get_running_app().stop()    
+            self._popup.dismiss()
+            App.get_running_app().stop()
+        
+        def dont_quit_app(self,*args):
+            self._popup.dismiss()
             
+        def confirm_quit(self,*args):
+            pop = YesNoPopup(
+                title='Exit',
+                message='Are you sure you want to exit the program ?',
+                size_hint=(0.6, 0.4),
+                pos_hint={'x':0.2, 'y':0.3}
+            )
+            pop.bind(
+                on_yes=self.quit_app,
+                on_no=self.dont_quit_app
+            )
+            
+            pop.open()
+            self._popup=pop
+                    
         def start_io(self,gio,io_desc):
             #GRID
             self.statusgrid=gh_io_status_grid(all_op_desc=io_desc)
@@ -374,6 +425,10 @@ if __name__ == "__main__":
         def page_jump4(self,*args):
             self.parent.current='lighting_screen'            
             
+        def page_jump5(self,*args):
+            App.get_running_app().open_settings()
+            #self.parent.current='settings_screen'
+            
         def desc_click(self,*args):
             self._graph_screen.set_db(args[1])
             
@@ -392,9 +447,6 @@ if __name__ == "__main__":
             self.root_box.add_widget(self.menu_root)
                                          
             #MENU
-            b1=Button(text='Status...',)
-            b1.bind(on_release=self.page_jump1)
-            self.menu_root.add_widget(b1)
             
             b2=ToggleButton(text='Raw',state='down')
             b2.bind(on_release=self.refresh_graph)
@@ -405,6 +457,11 @@ if __name__ == "__main__":
             b3.bind(on_release=self.refresh_graph)
             self.menu_root.add_widget(b3)
             self._comp_data_button=b3
+            
+            b1=Button(text='Back',)
+            b1.bind(on_release=self.page_jump1)
+            self.menu_root.add_widget(b1)
+            
             
             #NON-MENU
             self.graph_title=Label(color=[1,1,1,1],size=(400,25),size_hint=(1,None))
@@ -484,8 +541,6 @@ if __name__ == "__main__":
                 self._xzoom=self._xzoom+1
             self.set_zoom()
             
-        def quit_app(self,*args):
-            App.get_running_app().stop()    
             
         def page_jump1(self,*args):
             self.parent.current='status_screen'
@@ -534,19 +589,25 @@ if __name__ == "__main__":
             
             self.io_lighting_screen=LightingScreen(name='lighting_screen')
             
+            self.io_settings_screen=SettingsScreen(name='settings_screen')
+            self.webserver=None
+            
             #add in this order so status screen shows first
             self.add_widget(self.io_status_screen)
             self.add_widget(self.io_graph_screen)
             self.add_widget(self.io_sprinkler_screen)
             self.add_widget(self.io_heater_screen)
             self.add_widget(self.io_lighting_screen)
+            self.add_widget(self.io_settings_screen)
             
             
-        def start_io(self):
+        def start_io(self,config):
             self._gio=gh_io_dispatcher()
+            self._gh_config=config
+            self._gh_config.set_gio(self._gio)
             self._gio.start_io()
-                                       
-                                 
+            self._gh_config.push_all_config()
+                                                                       
             io_desc=self._gio.io_query('OPDESC?',0,15)  #command,data,timeout - need long timeout if using spawn instead of fork
             Logger.info("init_io: IO Descriptions:")
             if io_desc is not None:
@@ -560,13 +621,15 @@ if __name__ == "__main__":
             self.io_sprinkler_screen.set_gio(self._gio)
             self.io_heater_screen.set_gio(self._gio)
             self.io_lighting_screen.set_gio(self._gio)
+            self.io_settings_screen.set_gio(self._gio)
              
             #Start IO events running
             self._gio.start_events()
             
         def start_webserver(self):
             self.webserver=gh_webserver(self.io_status_screen.statusgrid,self._gio)
-            self.webserver.start()    
+            self.webserver.start()
+            self.io_settings_screen.set_webserver(self.webserver)    
         
         #this is the callback that is triggered by the io_q events
         def _process_io_data(self,*args):
@@ -585,10 +648,11 @@ if __name__ == "__main__":
         def build(self):
             self._running=False
             self._rw=RootWidget()
+            self.settings_cls=gh_io_settings.gh_SettingsPanel #custom panel see gh_io_settings.py
             return self._rw  
     
         def on_start(self):        
-            self._rw.start_io()
+            self._rw.start_io(self._gh_config)
             self._rw.start_webserver()
             self._running=True
         
@@ -596,9 +660,18 @@ if __name__ == "__main__":
             if self._running:  #prevent it running twice due to multiple clicks
                 self._rw.stop_io()
                 self._running=False
+                
+        def build_config(self,config):
+            self._gh_config=gh_io_settings.gh_config(config)
+            
+        def build_settings(self,settings):
+            self._gh_config.build_settings(settings)  
        
+    #Set up process tracking
     if platform.system()=='Linux':
         multiprocessing.set_start_method('fork')
     pr_cont.set_proctitle('gh_main process') #allows process to be idenfified in htop
     pr_cont.set_name('kivy main') #allows process to be idenfified in htop
+
+    #Run the app
     gh_gui_app().run()

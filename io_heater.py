@@ -232,6 +232,8 @@ class IO_Thread_Heater(IO_Thread):
         
     #process a command string
     def command(self,cmd,data):
+        response=None
+        
         print("io_heater:command ",cmd,data)
         #HEATER:MODE <OFF|AUTO|BOOST> 
         if cmd=='HEATER:MODE':
@@ -239,6 +241,12 @@ class IO_Thread_Heater(IO_Thread):
                 if self._mode!='BOOST':
                     self._mode_before_boost=self._mode
                 self._boost_end_time=datetime.datetime.now()+datetime.timedelta(minutes=self._boost_minutes)
+            if data=='OFF':
+                #expire the heater delay so it goes off right away
+                self._last_heat_on_time=self._last_heat_on_time-datetime.timedelta(seconds=self._min_heat_on_time)
+            if data=='AUTO' or data=='BOOST':
+                #expire the heater delay so it comes on right away    
+                self._last_heat_off_time=self._last_heat_off_time-datetime.timedelta(seconds=self._min_heat_off_time)                
             self._mode=data
             self._heartbeat(datetime.datetime.now()) #force an update
             response=None
@@ -256,6 +264,24 @@ class IO_Thread_Heater(IO_Thread):
             
         if cmd=='HEATER:BOOST_PARAMS?':
             response=(self._boosttarget,self._boost_minutes,self._boost_end_time)    
+        
+        if cmd=='HEATER:SCHED_CLEAR':
+            self._schedule=[]
+        
+        if cmd=='HEATER:SCHED_ADD':
+            d=data.split(',')
+            if len(d)==5:
+                d_int=[]
+                d_int.append(float(d[0]))
+                d_int.append(int(d[1]))
+                d_int.append(int(d[2]))
+                d_int.append(int(d[3]))
+                d_int.append(int(d[4]))
+                self._add_to_schedule(d_int)
+            #print("Heater Schedule: ",self._schedule)
+            
+        if cmd=='HEATER:SCHED?':
+            response=self._schedule
             
         return response            
         

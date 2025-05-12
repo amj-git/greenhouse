@@ -225,6 +225,11 @@ class sensor:
 
    def trigger(self):
       """Trigger a new relative humidity and temperature reading."""
+
+      #Set the storage variables to garbage so we know if nothing received
+      self.rhum = -999
+      self.temp = -999
+      
       if self.powered:
          if self.LED is not None:
             self.pi.write(self.LED, 1)
