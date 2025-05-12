@@ -507,7 +507,7 @@ if __name__ == "__main__":
         def start_io(self,gio,io_desc):
             #GRAPH
             self._db_manager=gio.get_db_manager()
-            db=self._db_manager.get_database('Probe 1','Temp')
+            db=self._db_manager.get_database('Control Box','Temp')
             self.io_graph.set_database(db)      
             
         #gets a string describing the span

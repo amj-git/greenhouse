@@ -58,14 +58,14 @@ def gh_io_main(io_q,io_ctrl):
                          sim_hw=sim_mode, \
                          period=4, \
                          addr='28-00000c362511')
-    io_manager.add_thread(io_thread3)
+#    io_manager.add_thread(io_thread3)
     
     io_thread4=IO_Thread_DS18B20(threadname="Probe 2", \
                          out_q=local_io_q, \
                          sim_hw=sim_mode, \
                          period=2.5, \
                          addr='28-00000c36cbaa')
-    io_manager.add_thread(io_thread4)
+#    io_manager.add_thread(io_thread4)
     
     io_thread5=IO_Thread_DS18B20(threadname="Control Box", \
                          out_q=local_io_q, \
@@ -85,7 +85,7 @@ def gh_io_main(io_q,io_ctrl):
                          out_q=local_io_q, \
                          sim_hw=sim_mode, \
                          addr=0x5c )
-    io_manager.add_thread(io_thread6b)    
+#    io_manager.add_thread(io_thread6b)    
     
     #DHT sensors on pin 17 and 27
     io_thread7=IO_Thread_DHT22(threadname="DHT1", \
@@ -93,7 +93,7 @@ def gh_io_main(io_q,io_ctrl):
                          sim_hw=sim_mode, \
                          period=5, \
                          pin=17 )
-    io_manager.add_thread(io_thread7)
+#    io_manager.add_thread(io_thread7)
     
     #Moisture sensors on pin 10,9,11
     #ref is on pin 12
@@ -105,7 +105,7 @@ def gh_io_main(io_q,io_ctrl):
                          ref_pin=12, \
                          det_pins=[16] )  #just sensor 1
                          #det_pins=[16,20,21] ) #all moisture sensors
-    io_manager.add_thread(io_thread8)    
+#    io_manager.add_thread(io_thread8)    
 
     #Sprinkler on pin 13,19,26
     #All handled by the same thread
@@ -126,7 +126,7 @@ def gh_io_main(io_q,io_ctrl):
                          fan_pin=24, \
                          target_tname='DHT1', \
                          target_pname='Temp' )
-    io_manager.add_thread(io_thread_heater) 
+#    io_manager.add_thread(io_thread_heater) 
     
     #Light Controller on pin GPIO18.
     io_thread_light_ctrl1=IO_Thread_Light_Ctrl(threadname="Grow Light", \
@@ -137,7 +137,7 @@ def gh_io_main(io_q,io_ctrl):
                          target_tname='Plant Light Sensor', \
                          target_pname='Light', \
                          slave_thread=io_thread6b )
-    io_manager.add_thread(io_thread_light_ctrl1)    
+#    io_manager.add_thread(io_thread_light_ctrl1)    
     
     '''
     #demo of a thread that uses data from another thread

@@ -47,6 +47,7 @@ class io_bh1750:
     def read(self):
         if _smbus_ok:
             data = self._bus.read_i2c_block_data(self._addr,ONE_TIME_HIGH_RES_MODE_1)
+            #print("data=",data)
             return convertToNumber(data)        
 
 

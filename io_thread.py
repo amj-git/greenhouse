@@ -59,6 +59,9 @@ try:
 except ImportError:
     _pigpio_ok=False
 
+
+print("_pigpio_ok=",_pigpio_ok)
+
 import signal
 import time
 import threading
