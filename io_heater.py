@@ -166,6 +166,9 @@ class IO_Thread_Heater(IO_Thread):
     
     def _control_heater(self):
         
+        if not self._startup_complete:  #skip if attempt to call before started
+            return
+        
         #BOOST MODE - Set target to the boost target or drop out of boost
         if self._mode=='BOOST':
             if datetime.datetime.now() > self._boost_end_time:  #boost has expired
@@ -201,17 +204,29 @@ class IO_Thread_Heater(IO_Thread):
                 
     def _startup(self):
         IO_Thread._startup(self)
+        #print("io_heater: _startup()")
         if not self._sim_hw:
+            #print("io_heater_startup(): if not self.sim_hw:")
             self._h_gpio.set_mode(self._heat_pin,pigpio.OUTPUT)
+            #print("io_heater_startup(): debug1")
             if self._fan_pin is not False:
                 self._h_gpio.set_mode(self._fan_pin,pigpio.OUTPUT)
+            #print("io_heater_startup(): debug2")
             self._turn_off()
+        
         
         #get the data source buffer - it is a deque
         #this has to be done in _startup as iob doesn't exist when
         #the constructor is called
+        
+        
+        #print("io_heater_startup(): getting target_buf")
         (n,self._target_buf)=self._iob.get_databuffer(self._target_tname,\
                                                   self._target_pname)
+        #print("io_heater_startup(): got target_buf")
+        #print("io_heater_startup(): _target_buf=",self._target_buf)
+        if self._target_buf is None:
+                print("io_heater_startup() ERROR: _target_buf is None")
         
     #Turns off all heater outputs
     def _turn_off(self):

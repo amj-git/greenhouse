@@ -64,9 +64,12 @@ class gh_db:
                 
     def start_io(self):
         self._gh_io_process.start()  #start IO process
-        self._init_db_manager()          #wait for this to complete - can be slow
-        self.send_io_command('START',0)  #This starts the threads
-        print("gh_db: IO Started.")
+        self._init_db_manager()          #wait for this to complete - can be slow        
+        start_result=self.io_query('START',0,15)  #This starts the threads
+        if(start_result=='STARTED'):
+            print("gh_db: IO",start_result)
+        else:
+            print("gh_db: IO Startup timed out.")
       
     '''Initialise the database manager
     this requires a copy of the output descriptions, to the IO process

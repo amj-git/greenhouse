@@ -137,7 +137,10 @@ class IO_Thread_Light_Ctrl(IO_Thread):
                 
         return temp_target
     
-    def _control_lighting(self):
+    def _control_lighting(self):        
+                
+        if not self._startup_complete:  #skip if attempt to call before started
+            return
         
         #BOOST MODE - Set target to the boost target or drop out of boost
         if self._mode=='BOOST':

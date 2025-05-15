@@ -96,6 +96,7 @@ class IO_Thread(Thread):
         Thread.__init__(self)
         self.daemon=True
         self.__running=True
+        self._startup_complete=False
         self._out_q=kwargs.get('out_q',0)
         self._sim_hw=kwargs.get('sim_hw',False)
         self._period=kwargs.get('period',10)
@@ -120,6 +121,7 @@ class IO_Thread(Thread):
     def run(self):
         pr_cont.set_name(self._threadname) #allows process to be idenfified in htop
         self._startup()
+        self.startup_complete=True
         while(self.__running):
             lasttime=datetime.now()
             if self._slave_thread is not None:  #trigger slaves first so data can be used right away
@@ -509,12 +511,13 @@ class IO_Thread_Manager:
         At this point we can add an io buffer, iob
     '''             
     def start_threads(self):
-        self._iob=IO_Buffer(self.get_all_op_descriptions(),10)
+        self._iob=IO_Buffer(self.get_all_op_descriptions(),10)        
         for t in self._threads:
             t.set_iob(self._iob)
             if not self._sim_hw:
                 t.set_pigpio(self._h_gpio)
             t.start()
+        print("IO_Thread_Manager: Threads Started")
             
     def get_iob(self):
         return self._iob
