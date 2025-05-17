@@ -155,19 +155,19 @@ if __name__ == "__main__":
             self.root_box.add_widget(self.menu_root)
                                          
             #MENU
-            self.b1=Button(text='HOSE',)
+            self.b1=Button(text='HOSE',font_size="30sp",halign='center')
             self.b1.bind(on_release=self.hoseclick)
             self.menu_root.add_widget(self.b1)
 
-            self.b2=Button(text='SPRINKLER 1',)
+            self.b2=Button(text='SPRINKLER 1',font_size="30sp",halign='center')
             self.b2.bind(on_release=self.s1click)
             self.menu_root.add_widget(self.b2)
 
-            self.b3=Button(text='SPRINKLER 2',)
+            self.b3=Button(text='SPRINKLER 2',font_size="30sp",halign='center')
             self.b3.bind(on_release=self.s2click)
             self.menu_root.add_widget(self.b3)
             
-            b99=Button(text='Back',)
+            b99=Button(text='Back',font_size="30sp")
             b99.bind(on_release=self.page_jump1)
             self.menu_root.add_widget(b99)
             
@@ -185,17 +185,17 @@ if __name__ == "__main__":
                        
         def hoseclick(self,*args):
             self.hose_state=self.cycle_item(self.hose_state,2)
-            self.b1.text='HOSE '+self.state_names[self.hose_state]
+            self.b1.text='HOSE\n'+self.state_names[self.hose_state]
             self._gio.send_io_command('SPRINK:MODE','0,'+self.state_names[self.hose_state])
                     
         def s1click(self,*args):
             self.sprink1_state=self.cycle_item(self.sprink1_state,2)
-            self.b2.text='SPRINKLER 1 '+self.state_names[self.sprink1_state]
+            self.b2.text='SPRINKLER 1\n'+self.state_names[self.sprink1_state]
             self._gio.send_io_command('SPRINK:MODE','1,'+self.state_names[self.sprink1_state])
                     
         def s2click(self,*args):
             self.sprink2_state=self.cycle_item(self.sprink2_state,2)
-            self.b3.text='SPRINKLER 2 '+self.state_names[self.sprink2_state]
+            self.b3.text='SPRINKLER 2\n'+self.state_names[self.sprink2_state]
             self._gio.send_io_command('SPRINK:MODE','2,'+self.state_names[self.sprink2_state])
             
             

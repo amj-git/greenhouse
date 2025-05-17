@@ -72,7 +72,7 @@ def gh_io_main(io_q,io_ctrl):
                          out_q=local_io_q, \
                          sim_hw=sim_mode, \
                          period=4, \
-                         addr='28-00000c362511')
+                         addr='28-011925bb40ae')
     io_manager.add_thread(io_thread3)
     
     
@@ -90,7 +90,7 @@ def gh_io_main(io_q,io_ctrl):
                          period=5.1, \
                          heat_pin=25, \
                          fan_pin=24, \
-                         target_tname='DHT1', \
+                         target_tname='Inside1', \
                          target_pname='Temp' )
     io_manager.add_thread(io_thread_heater)
         
