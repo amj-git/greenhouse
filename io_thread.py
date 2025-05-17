@@ -121,7 +121,7 @@ class IO_Thread(Thread):
     def run(self):
         pr_cont.set_name(self._threadname) #allows process to be idenfified in htop
         self._startup()
-        self.startup_complete=True
+        self._startup_complete=True
         while(self.__running):
             lasttime=datetime.now()
             if self._slave_thread is not None:  #trigger slaves first so data can be used right away

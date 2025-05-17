@@ -18,7 +18,7 @@ last_w1_reset_time=datetime.now()
 def w1_read_temp_raw(fname):
     try:
         f = open(fname, 'r')
-    except IOError:
+    except IOError:        
         return(None)
     lines = f.readlines()
     f.close()
@@ -31,8 +31,12 @@ def w1_read_temp(addr,h_gpio):
         print("Device File Not Found "+fname)
         w1_reset(h_gpio)
         return(None,None)
+    if(len(lines)==0):  #If device disconnects, file can still be present with no contents
+        print("Device Not Reading "+fname)
+        w1_reset(h_gpio)
+        return(None,None)
     retry_counter=0
-    while lines[0].strip()[-3:] != 'YES':
+    while lines[0].strip()[-3:] != 'YES':  #This loop retries if we get bad reads
         print(lines)
         time.sleep(0.2)
         lines = w1_read_temp_raw(fname)

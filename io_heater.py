@@ -167,6 +167,7 @@ class IO_Thread_Heater(IO_Thread):
     def _control_heater(self):
         
         if not self._startup_complete:  #skip if attempt to call before started
+            print("io_heater _control_heater() Not Started - Skipping")
             return
         
         #BOOST MODE - Set target to the boost target or drop out of boost
