@@ -1,0 +1,22 @@
+#Greenhouse service file
+#Copy this to /lib/systemd/system/
+
+#Then start with
+#sudo systemctl daemon-reload
+#sudo systemctl enable gh.service
+#sudo systemctl start gh.service
+
+#Check status with
+#systemctl status gh.service
+
+[Unit]
+Description=Greenhouse Controller
+After=multi-user.target
+
+[Service]
+User=pi
+WorkingDirectory=/home/pi/greenhouse
+ExecStart=/bin/bash -c '/home/pi/greenhouse/greenhouse.sh'
+
+[Install]
+WantedBy=multi-user.target
