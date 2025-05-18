@@ -85,12 +85,12 @@ class gh_webserver(Thread):
             self.socketio.run(self.app,
                 host='0.0.0.0', port=self.portnumber, debug=True, use_debugger=False,
                 use_reloader=False)
-        else:  #kivy mode
+        else:  #kivy mode - note allow_unsafe_werkzeug=True now required
             from logging import Logger
             Logger.manager.loggerDict['werkzeug'] = Logger.manager.loggerDict['kivy']
             self.socketio.run(self.app,
                 host='0.0.0.0', port=self.portnumber, debug=True, use_debugger=True,
-                use_reloader=False)
+                use_reloader=False,allow_unsafe_werkzeug=True)
         #----------------------
 
 
@@ -101,3 +101,4 @@ if __name__ == '__main__':
     server.start()
     while True:
         time.sleep(10)
+

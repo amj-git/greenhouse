@@ -9,6 +9,9 @@
 #Check status with
 #systemctl status gh.service
 
+#requires pigpiod to be running (check pigpiod.service status and run this if it isn't)
+#sudo systemctl enable pigpiod
+
 [Unit]
 Description=Greenhouse Controller
 After=multi-user.target
@@ -16,7 +19,12 @@ After=multi-user.target
 [Service]
 User=pi
 WorkingDirectory=/home/pi/greenhouse
-ExecStart=/bin/bash -c '/home/pi/greenhouse/greenhouse.sh'
+
+#start using shell script which selects virtual environment - alternative option
+#ExecStart=/bin/bash -c '/home/pi/greenhouse/greenhouse.sh'
+
+#start in virtual environment directly
+ExecStart=/bin/bash -c '/home/pi/kivy/.venv/bin/python3 /home/pi/greenhouse/gh_gui.py'
 
 [Install]
 WantedBy=multi-user.target
