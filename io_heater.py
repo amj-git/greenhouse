@@ -166,6 +166,10 @@ class IO_Thread_Heater(IO_Thread):
     
     def _control_heater(self):
         
+        if not self._startup_complete:  #skip if attempt to call before started
+            print("io_heater _control_heater() Not Started - Skipping")
+            return
+        
         #BOOST MODE - Set target to the boost target or drop out of boost
         if self._mode=='BOOST':
             if datetime.datetime.now() > self._boost_end_time:  #boost has expired
@@ -201,17 +205,29 @@ class IO_Thread_Heater(IO_Thread):
                 
     def _startup(self):
         IO_Thread._startup(self)
+        #print("io_heater: _startup()")
         if not self._sim_hw:
+            #print("io_heater_startup(): if not self.sim_hw:")
             self._h_gpio.set_mode(self._heat_pin,pigpio.OUTPUT)
+            #print("io_heater_startup(): debug1")
             if self._fan_pin is not False:
                 self._h_gpio.set_mode(self._fan_pin,pigpio.OUTPUT)
+            #print("io_heater_startup(): debug2")
             self._turn_off()
+        
         
         #get the data source buffer - it is a deque
         #this has to be done in _startup as iob doesn't exist when
         #the constructor is called
+        
+        
+        #print("io_heater_startup(): getting target_buf")
         (n,self._target_buf)=self._iob.get_databuffer(self._target_tname,\
                                                   self._target_pname)
+        #print("io_heater_startup(): got target_buf")
+        #print("io_heater_startup(): _target_buf=",self._target_buf)
+        if self._target_buf is None:
+                print("io_heater_startup() ERROR: _target_buf is None")
         
     #Turns off all heater outputs
     def _turn_off(self):
@@ -232,6 +248,8 @@ class IO_Thread_Heater(IO_Thread):
         
     #process a command string
     def command(self,cmd,data):
+        response=None
+        
         print("io_heater:command ",cmd,data)
         #HEATER:MODE <OFF|AUTO|BOOST> 
         if cmd=='HEATER:MODE':
@@ -239,6 +257,12 @@ class IO_Thread_Heater(IO_Thread):
                 if self._mode!='BOOST':
                     self._mode_before_boost=self._mode
                 self._boost_end_time=datetime.datetime.now()+datetime.timedelta(minutes=self._boost_minutes)
+            if data=='OFF':
+                #expire the heater delay so it goes off right away
+                self._last_heat_on_time=self._last_heat_on_time-datetime.timedelta(seconds=self._min_heat_on_time)
+            if data=='AUTO' or data=='BOOST':
+                #expire the heater delay so it comes on right away    
+                self._last_heat_off_time=self._last_heat_off_time-datetime.timedelta(seconds=self._min_heat_off_time)                
             self._mode=data
             self._heartbeat(datetime.datetime.now()) #force an update
             response=None
@@ -256,6 +280,24 @@ class IO_Thread_Heater(IO_Thread):
             
         if cmd=='HEATER:BOOST_PARAMS?':
             response=(self._boosttarget,self._boost_minutes,self._boost_end_time)    
+        
+        if cmd=='HEATER:SCHED_CLEAR':
+            self._schedule=[]
+        
+        if cmd=='HEATER:SCHED_ADD':
+            d=data.split(',')
+            if len(d)==5:
+                d_int=[]
+                d_int.append(float(d[0]))
+                d_int.append(int(d[1]))
+                d_int.append(int(d[2]))
+                d_int.append(int(d[3]))
+                d_int.append(int(d[4]))
+                self._add_to_schedule(d_int)
+            #print("Heater Schedule: ",self._schedule)
+            
+        if cmd=='HEATER:SCHED?':
+            response=self._schedule
             
         return response            
         

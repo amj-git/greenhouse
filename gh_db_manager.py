@@ -184,11 +184,20 @@ class param_db:
         value is a numeric format
     '''
     def write_value(self,timestamp,val):
+        #print("Debug gh_db_manager.write_value timestamp=",timestamp," val=",val)
+        #print("Debug gh_db_manager.write_value self=",self._op_desc,"/",self._tname,"/",self._pname)
         timestamp_ms=datetime_to_timestamp(timestamp)
         data=(timestamp_ms,self.compress_val(val))
         with self._lock:
             #tstart=datetime.now()
-            self._db.execute('INSERT INTO raw_data VALUES (?,?)',data)
+            
+            try:
+                self._db.execute('INSERT INTO raw_data VALUES (?,?)',data)
+            except sqlite3.Error as er:
+                #catch failures to write - commonly occurs when two timestamps are the same
+                print("gh_db_manager.write_value db=",self._dbname," data=",data)
+                print("sqlite3 Error: ",er)
+                
             self._commit_if_due(timestamp_ms)
             #tstop=datetime.now()
             #tdelta=(tstop-tstart).total_seconds()

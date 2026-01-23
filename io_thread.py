@@ -59,6 +59,9 @@ try:
 except ImportError:
     _pigpio_ok=False
 
+
+print("_pigpio_ok=",_pigpio_ok)
+
 import signal
 import time
 import threading
@@ -93,6 +96,7 @@ class IO_Thread(Thread):
         Thread.__init__(self)
         self.daemon=True
         self.__running=True
+        self._startup_complete=False
         self._out_q=kwargs.get('out_q',0)
         self._sim_hw=kwargs.get('sim_hw',False)
         self._period=kwargs.get('period',10)
@@ -117,6 +121,7 @@ class IO_Thread(Thread):
     def run(self):
         pr_cont.set_name(self._threadname) #allows process to be idenfified in htop
         self._startup()
+        self._startup_complete=True
         while(self.__running):
             lasttime=datetime.now()
             if self._slave_thread is not None:  #trigger slaves first so data can be used right away
@@ -272,7 +277,8 @@ class IO_Thread_DS18B20(IO_Thread):
             temp_c,temp_f=w1_read_temp(self._addr,self._h_gpio)
             #print("IO_Thread: "+self._threadname+" _heartbeat() temp_c=",temp_c)
             op_data=dict()
-            self._add_to_out_q('Temp',temp_c,triggertime)
+            if temp_c is not None:
+                self._add_to_out_q('Temp',temp_c,triggertime)
             
     def _shutdown(self):
         IO_Thread._shutdown(self)
@@ -309,8 +315,10 @@ class IO_Thread_BH1750(IO_Thread):
         else:
             light=self._l_sensor.read()
             #print("IO_Thread: "+self._threadname+" _heartbeat() light=",light)
-            
-            self._add_to_out_q('Light',light,triggertime)
+            if light!=-999:
+                self._add_to_out_q('Light',light,triggertime)
+            else:
+                print(self._threadname+" BH1750 Sensor: Read Error")
         
     def _shutdown(self):
         if not self._sim_hw:
@@ -358,8 +366,11 @@ class IO_Thread_DHT22(IO_Thread):
             temp_c=self._dht_obj.temperature()
             
             #print("IO_Thread: "+self._threadname+" _heartbeat() temp_c=",temp_c," humid=",humid)  
-            self._add_to_out_q('Temp',temp_c,triggertime)
-            self._add_to_out_q('Humid',humid,triggertime)
+            if (temp_c!=-999) and (humid !=-999):
+                self._add_to_out_q('Temp',temp_c,triggertime)
+                self._add_to_out_q('Humid',humid,triggertime)
+            else:
+                print(self._threadname+" DHT22 Sensor: Read Error")
         
     def _shutdown(self):
         if not self._sim_hw:
@@ -500,12 +511,13 @@ class IO_Thread_Manager:
         At this point we can add an io buffer, iob
     '''             
     def start_threads(self):
-        self._iob=IO_Buffer(self.get_all_op_descriptions(),10)
+        self._iob=IO_Buffer(self.get_all_op_descriptions(),10)        
         for t in self._threads:
             t.set_iob(self._iob)
             if not self._sim_hw:
                 t.set_pigpio(self._h_gpio)
             t.start()
+        print("IO_Thread_Manager: Threads Started")
             
     def get_iob(self):
         return self._iob

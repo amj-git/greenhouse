@@ -137,7 +137,10 @@ class IO_Thread_Light_Ctrl(IO_Thread):
                 
         return temp_target
     
-    def _control_lighting(self):
+    def _control_lighting(self):        
+                
+        if not self._startup_complete:  #skip if attempt to call before started
+            return
         
         #BOOST MODE - Set target to the boost target or drop out of boost
         if self._mode=='BOOST':
@@ -155,7 +158,7 @@ class IO_Thread_Light_Ctrl(IO_Thread):
             self._target_light=0  #set low value so it's obvious it's switched off
             self._set_light_state(0,False)
         else:
-            #Get the last temperature sensor reading
+            #Get the last light sensor reading
             current_light=None
             with self._iob.get_lock():
                 n=len(self._target_buf)
@@ -216,6 +219,8 @@ class IO_Thread_Light_Ctrl(IO_Thread):
     #process a command string
     def command(self,cmd,data):
         print("io_light_ctrl:command ",cmd,data)
+        response=None
+        
         #HEATER:MODE <OFF|AUTO|BOOST> 
         if cmd=='LIGHT_CTRL:MODE':
             if data=='BOOST':
@@ -239,6 +244,23 @@ class IO_Thread_Light_Ctrl(IO_Thread):
             
         if cmd=='LIGHT_CTRL:BOOST_PARAMS?':
             response=(self._boosttarget,self._boost_minutes,self._boost_end_time)    
+            
+        if cmd=='LIGHT_CTRL:SCHED_CLEAR':
+            self._schedule=[]
+        
+        if cmd=='LIGHT_CTRL:SCHED_ADD':
+            d=data.split(',')
+            if len(d)==5:
+                d_int=[]
+                d_int.append(float(d[0]))
+                d_int.append(int(d[1]))
+                d_int.append(int(d[2]))
+                d_int.append(int(d[3]))
+                d_int.append(int(d[4]))
+                self._add_to_schedule(d_int)        
+            
+        if cmd=='LIGHT_CTRL:SCHED?':
+            response=self._schedule        
             
         return response            
         
