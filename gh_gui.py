@@ -75,6 +75,7 @@ if __name__ == "__main__":
     import multiprocessing
     from time import sleep
     from gh_webserver import gh_webserver
+    from gh_mqtt import gh_mqtt
     import gh_io_settings
     from gh_io_settings import SettingsScreen
     from k_yesnopopup import YesNoPopup
@@ -591,6 +592,7 @@ if __name__ == "__main__":
             
             self.io_settings_screen=SettingsScreen(name='settings_screen')
             self.webserver=None
+            self.mqtt=None
             
             #add in this order so status screen shows first
             self.add_widget(self.io_status_screen)
@@ -615,7 +617,8 @@ if __name__ == "__main__":
             else:
                 Logger.exception("init_io: OPDESC? Query Timed Out (No response from gh_io process)")
                 sys.exit(1)
-        
+            self._io_desc=io_desc
+
             self.io_graph_screen.start_io(self._gio,io_desc)
             self.io_status_screen.start_io(self._gio,io_desc)
             self.io_sprinkler_screen.set_gio(self._gio)
@@ -629,7 +632,11 @@ if __name__ == "__main__":
         def start_webserver(self):
             self.webserver=gh_webserver(self.io_status_screen.statusgrid,self._gio)
             self.webserver.start()
-            self.io_settings_screen.set_webserver(self.webserver)    
+            self.io_settings_screen.set_webserver(self.webserver)
+
+        def start_mqtt(self):
+            self.mqtt=gh_mqtt(self._gio,self._io_desc)
+            self.mqtt.start()
         
         #this is the callback that is triggered by the io_q events
         def _process_io_data(self,*args):
@@ -637,12 +644,14 @@ if __name__ == "__main__":
             #Logger.debug("gh_io_dispatcher:"+str(args[1]))
             
         def stop_io(self,*args):
+            if self.mqtt is not None:
+                self.mqtt.stop()
             self._gio.stop_io()
-            
+
         def quit_app(self,*args):
             App.get_running_app().stop()
-            
-            
+
+
     class gh_gui_app(App):
           
         def build(self):
@@ -651,9 +660,10 @@ if __name__ == "__main__":
             self.settings_cls=gh_io_settings.gh_SettingsPanel #custom panel see gh_io_settings.py
             return self._rw  
     
-        def on_start(self):        
+        def on_start(self):
             self._rw.start_io(self._gh_config)
             self._rw.start_webserver()
+            self._rw.start_mqtt()
             self._running=True
         
         def on_stop(self):        

@@ -11,7 +11,7 @@ Greenhouse temperature/environment logger and control system for Raspberry Pi ha
 There is no package manifest (no `requirements.txt`/`Pipfile`) and no test suite or linter configured in this repo.
 
 - Entry point: `python3 gh_gui.py` (run from the repo root; it loads `gh_gui.kv` via a relative path). `gh_main.py` is currently empty/unused.
-- Runtime dependencies to have installed: `kivy`, `flask`, `flask-socketio`. On Linux/RPi you additionally need `pigpio` (with `pigpiod` running) and `prctl`; these imports are wrapped in `try/except ImportError` so the app still runs without them.
+- Runtime dependencies to have installed: `kivy`, `flask`, `flask-socketio`, `paho-mqtt`. On Linux/RPi you additionally need `pigpio` (with `pigpiod` running) and `prctl`; these imports are wrapped in `try/except ImportError` so the app still runs without them.
 - **Platform-dependent simulation**: on non-Linux platforms (i.e. Windows dev machines) hardware I/O is automatically simulated (`sim_hw=True` in `gh_io.py`), generating random data instead of touching real GPIO/sensors. This is the normal way to develop/test locally on Windows — no RPi hardware is required.
 - On a real Raspberry Pi, `pigpiod` must be started first (see `greenhouse.sh`), and the app is normally run as a systemd service — see `gh.service` (copy to `/lib/systemd/system/`, `sudo systemctl enable/start gh.service`).
 - The web dashboard is served on port 5000 (`http://<host>:5000/` and `/graph1`) once the app is running.
@@ -41,6 +41,13 @@ The system is split into **two OS processes** connected by a `multiprocessing.Qu
 - `gh_io_dispatcher` (`gh_io_dispatcher.py`) subclasses both `gh_db` and Kivy's `EventDispatcher`. Because `gh_mon` runs on a background thread, it cannot touch Kivy widgets directly — it instead queues data onto `_gh_ev_q`, which a Kivy `Clock.schedule_interval` heartbeat drains on the main thread and re-dispatches as the Kivy event `on_io_data`. This is the pattern to follow for **any** cross-thread → Kivy data flow in this codebase.
 - `gh_db_manager.py` is the SQLite persistence layer. One `param_db` (and one `.db` file, `db/<ThreadName>-<ParamName>.db` with spaces replaced by `-`) exists per thread/parameter combination. Each db has `raw_data`, a periodically-computed downsampled `comp_data` (avg/min/max per chunk, `Tchunk` default 10 min), and a `meta_data` table storing the parameter description. Values are stored as scaled integers (`val_comp_mult`, chosen by `ptype`) rather than floats.
 - `RootWidget.start_io()` in `gh_gui.py` is the wiring point: creates the `gh_io_dispatcher`, pushes saved config to the IO threads, queries `OPDESC?` to get parameter descriptions for every thread (used to build the status grid/graphs generically), then starts event dispatch.
+
+### Home Assistant integration (`gh_mqtt.py`)
+
+- `gh_mqtt` publishes every sensor/controller reading to an MQTT broker using Home Assistant's MQTT Discovery format, so entities appear in HA automatically — generic from `OPDESC?`, same principle as the status grid/graphs/web dashboard. It is read-only/logging only: it does not subscribe to any command topics, so HA cannot control the greenhouse (yet).
+- Config lives in `mqtt_config.json` (repo root, gitignored — written with `enabled: false` defaults on first run if missing). Set `enabled: true` and fill in `host`/`port`/`username`/`password` to turn it on; on Home Assistant OS/Supervised, `host` is the HA host running the Mosquitto broker add-on, and `username`/`password` are a dedicated HA user created for this purpose (not anonymous, not the HA login).
+- Wired up in `gh_gui.py`'s `RootWidget.start_mqtt()` (called from `gh_gui_app.on_start()` alongside `start_webserver()`), which binds to the same `on_io_data` event everything else in the GUI process uses.
+- Topics: state at `<base_topic>/<thread>/<param>/state`, discovery config (retained) at `<discovery_prefix>/sensor/<node_id>/<object_id>/config`, availability (LWT) at `<base_topic>/status`.
 
 ### Web dashboard (`gh_webserver.py`)
 
