@@ -1,0 +1,11 @@
+{
+  "enabled": false,
+  "host": "homeassistant.local",
+  "port": 1883,
+  "username": "",
+  "password": "",
+  "base_topic": "greenhouse",
+  "discovery_prefix": "homeassistant",
+  "node_id": "greenhouse",
+  "device_name": "Greenhouse"
+}
