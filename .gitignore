@@ -6,3 +6,4 @@ __pycache__/
 *.db-journal
 *.xlsx
 gh_gui_app.ini
+mqtt_config.json
